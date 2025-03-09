@@ -1,0 +1,33 @@
+{
+  "entity": {
+    "sensor": {
+      "major_updates": {
+        "default": "mdi:arrow-down-bold-circle-outline"
+      },
+      "minor_updates": {
+        "default": "mdi:arrow-down-bold-circle-outline"
+      },
+      "monitored_images": {
+        "default": "mdi:eye"
+      },
+      "other_updates": {
+        "default": "mdi:arrow-down-bold-circle-outline"
+      },
+      "patch_updates": {
+        "default": "mdi:arrow-down-bold-circle-outline"
+      },
+      "unknown": {
+        "default": "mdi:alert-circle-outline"
+      },
+      "up_to_date": {
+        "default": "mdi:check-circle-outline"
+      },
+      "updates_available": {
+        "default": "mdi:arrow-down-bold-circle-outline"
+      },
+      "last_checked": {
+        "default": "mdi:update"
+      }
+    }
+  }
+}

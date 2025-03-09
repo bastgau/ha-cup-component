@@ -1,0 +1,18 @@
+{
+  "domain": "cup_component",
+  "name": "HA Cup Component",
+  "codeowners": [
+    "@bastgau"
+  ],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/bastgau/ha-cup-component",
+  "integration_type": "service",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/bastgau/ha-cup-component/issues",
+  "loggers": [
+    "cup_component"
+  ],
+  "requirements": [],
+  "version": "1.0.0"
+}

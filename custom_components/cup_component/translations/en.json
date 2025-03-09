@@ -1,0 +1,105 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Service is already configured."
+        },
+        "error": {
+            "incorrect_data_expected": "Failed to retrieve the data in the correct structure.",
+            "cannot_connect": "Failed to connect to the server. Ensure that the server address and the port are correct.",
+            "invalid_path": "Invalid API path specified. Please verify the endpoint URL."
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "name": "Server name",
+                    "url": "Address"
+                },
+                "data_description": {
+                    "name": "The server name will be used in the entity names.",
+                    "url": "URL or address of your cup server (ie: http://127.0.0.1:8000)."
+                },
+                "description": "This integration allows you to retrieve statistics with a Cup server.",
+                "title": "HA Cup Component"
+            }
+        }
+    },
+    "entity": {
+        "sensor": {
+            "major_updates": {
+                "name": "Images with major updates",
+                "unit_of_measurement": "images",
+                "state_attributes": {
+                    "images_list": {
+                        "name": "Image list"
+                    }
+                }
+            },
+            "minor_updates": {
+                "name": "Images with minor updates",
+                "unit_of_measurement": "images",
+                "state_attributes": {
+                    "images_list": {
+                        "name": "Image list"
+                    }
+                }
+            },
+            "monitored_images": {
+                "name": "Monitored images",
+                "unit_of_measurement": "images",
+                "state_attributes": {
+                    "images_list": {
+                        "name": "Image list"
+                    }
+                }
+            },
+            "other_updates": {
+                "name": "Images with other updates",
+                "unit_of_measurement": "images",
+                "state_attributes": {
+                    "images_list": {
+                        "name": "Image list"
+                    }
+                }
+            },
+            "patch_updates": {
+                "name": "Images with patch updates",
+                "unit_of_measurement": "images",
+                "state_attributes": {
+                    "images_list": {
+                        "name": "Image list"
+                    }
+                }
+            },
+            "unknown": {
+                "name": "Images with unknown status",
+                "unit_of_measurement": "images",
+                "state_attributes": {
+                    "images_list": {
+                        "name": "Image list"
+                    }
+                }
+            },
+            "up_to_date": {
+                "name": "Up-to-date images",
+                "unit_of_measurement": "images",
+                "state_attributes": {
+                    "images_list": {
+                        "name": "Image list"
+                    }
+                }
+            },
+            "updates_available": {
+                "name": "Images with updates available",
+                "unit_of_measurement": "images",
+                "state_attributes": {
+                    "images_list": {
+                        "name": "Image list"
+                    }
+                }
+            },
+            "last_checked": {
+                "name": "Last checked"
+            }
+        }
+    }
+}

@@ -1,0 +1,105 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Le service est déjà configuré."
+        },
+        "error": {
+            "incorrect_data_expected": "Échec de la récupération des données dans la structure correcte.",
+            "cannot_connect": "Échec de la connexion au serveur. Assurez-vous que l'adresse du serveur et le port sont corrects.",
+            "invalid_path": "Chemin d'API incorrect spécifié. Veuillez vérifier l'URL de l'endpoint."
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "name": "Nom du serveur",
+                    "url": "Adresse"
+                },
+                "data_description": {
+                    "name": "Le nom du serveur sera utilisé dans les noms d'entités.",
+                    "url": "URL ou adresse de votre serveur Cup (par exemple : http://127.0.0.1:8000)."
+                },
+                "description": "Cette intégration vous permet de récupérer les statistiques depuis un serveur Cup.",
+                "title": "HA Cup Component"
+            }
+        }
+    },
+    "entity": {
+        "sensor": {
+            "major_updates": {
+                "name": "Images avec des mises à jour majeures",
+                "unit_of_measurement": "images",
+                "state_attributes": {
+                    "images_list": {
+                        "name": "Liste des images"
+                    }
+                }
+            },
+            "minor_updates": {
+                "name": "Images avec des mises à jour mineures",
+                "unit_of_measurement": "images",
+                "state_attributes": {
+                    "images_list": {
+                        "name": "Liste des images"
+                    }
+                }
+            },
+            "monitored_images": {
+                "name": "Images surveillées",
+                "unit_of_measurement": "images",
+                "state_attributes": {
+                    "images_list": {
+                        "name": "Liste des images"
+                    }
+                }
+            },
+            "other_updates": {
+                "name": "Images avec d'autres mises à jour",
+                "unit_of_measurement": "images",
+                "state_attributes": {
+                    "images_list": {
+                        "name": "Liste des images"
+                    }
+                }
+            },
+            "patch_updates": {
+                "name": "Images avec des mises à jour correctives",
+                "unit_of_measurement": "images",
+                "state_attributes": {
+                    "images_list": {
+                        "name": "Liste des images"
+                    }
+                }
+            },
+            "unknown": {
+                "name": "Images avec un statut inconnu",
+                "unit_of_measurement": "images",
+                "state_attributes": {
+                    "images_list": {
+                        "name": "Liste des images"
+                    }
+                }
+            },
+            "up_to_date": {
+                "name": "Images à jour",
+                "unit_of_measurement": "images",
+                "state_attributes": {
+                    "images_list": {
+                        "name": "Liste des images"
+                    }
+                }
+            },
+            "updates_available": {
+                "name": "Images avec des mises à jour disponibles",
+                "unit_of_measurement": "images",
+                "state_attributes": {
+                    "images_list": {
+                        "name": "Liste des images"
+                    }
+                }
+            },
+            "last_checked": {
+                "name": "Dernière vérification"
+            }
+        }
+    }
+}
