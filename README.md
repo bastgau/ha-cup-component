@@ -53,8 +53,21 @@ The integration is currently translated in few langages :
 2. Place the integration folder in the custom_components directory of Home Assistant.
 3. Restart Home Assistant.
 
+## Debugging
 
-### Support & Contributions
+It is possible to show the info and debug logs for the Cup Component integration, to do this you need to enable logging in the configuration.yaml, example below:
+
+```
+logger:
+  default: warning
+  logs:
+    # Log for Cup Component integration
+    custom_components.cup_component: debug
+```
+
+Logs do not remove sensitive information so careful what you share, check what you are about to share and blank identifying information.
+
+## Support & Contributions
 
 If you encounter any issues or wish to contribute to improving this integration, feel free to open an issue or a pull request on the GitHub repository.
 
