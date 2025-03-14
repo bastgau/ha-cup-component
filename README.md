@@ -37,21 +37,25 @@ The integration is currently translated in few langages :
 
 ### Installation via HACS
 
-1. Open Home Assistant and go to HACS.
-2. Navigate to "Integrations" and click on "Add a custom repository".
-3. Add the GitHub repository URL of the integration.
-4. Search for "HA Cup Component" and install it.
-5. Restart Home Assistant.
+1. Add this repository as a custom repository to HACS:
 
-### One-click intallation
+[![Add Repository](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=bastgau&repository=ha-cup-component&category=Integration)
 
-[![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=bastgau&repository=ha-cup-component&category=Integration)
+2. Use HACS to install the integration.
+3. Restart Home Assistant.
+4. Set up the integration using the UI:
+
+[![Add Integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=cup_component)
+
 
 ### Manual Installation
 
 1. Download the integration files from the GitHub repository.
 2. Place the integration folder in the custom_components directory of Home Assistant.
 3. Restart Home Assistant.
+4. Set up the integration using the UI:
+
+[![Add Integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=cup_component)
 
 ## Debugging
 
