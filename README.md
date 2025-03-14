@@ -57,6 +57,12 @@ The integration is currently translated in few langages :
 
 [![Add Integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=cup_component)
 
+## Troubleshooting
+
+If you are having issues connecting, make sure you can successfully connect to http(s)://<url>:<port>/api/v3/json using a private browser window.
+
+There have also been reports of non-ssl instances not being entirely reliable. It is recommended to use a valid SSL certificate.
+
 ## Debugging
 
 It is possible to show the info and debug logs for the Cup Component integration, to do this you need to enable logging in the configuration.yaml, example below:
