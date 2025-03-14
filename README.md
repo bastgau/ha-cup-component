@@ -59,7 +59,7 @@ The integration is currently translated in few langages :
 
 ## Troubleshooting
 
-If you are having issues connecting, make sure you can successfully connect to http(s)://<url>:<port>/api/v3/json using a private browser window.
+If you are having issues connecting, make sure you can successfully connect to http(s)://\<url\>:\<port\>/api/v3/json using a private browser window.
 
 There have also been reports of non-ssl instances not being entirely reliable. It is recommended to use a valid SSL certificate.
 
