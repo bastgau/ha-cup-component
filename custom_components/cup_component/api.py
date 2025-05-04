@@ -95,7 +95,7 @@ class API:
         request: requests.Response
 
         try:
-            async with asyncio.timeout(60):
+            async with asyncio.timeout(10):
                 if method.lower() == "post":
                     request = await self._session.post(url, json=data, headers=headers)
                 elif method.lower() == "put":
@@ -195,6 +195,10 @@ class API:
         }
 
         for image in data["images"]:
+            if image["result"]["has_update"] is None:
+                new_images["unknown"].append(image)
+                continue
+
             if image["result"]["has_update"] is False:
                 new_images["up_to_date"].append(image)
                 continue
@@ -224,8 +228,11 @@ class API:
             new_metrics[version_update_type] = len(images)
 
         new_metrics["monitored_images"] = sum(new_metrics.values())
+
         new_metrics["updates_available"] = (
-            new_metrics["monitored_images"] - new_metrics["up_to_date"]
+            new_metrics["monitored_images"]
+            - new_metrics["up_to_date"]
+            - new_metrics["unknown"]
         )
 
         self.cache_metrics = new_metrics
