@@ -23,6 +23,20 @@
             }
         }
     },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "update_interval": "Fréquence d'interrogation des données (secondes)"
+                },
+                "description": "Après avoir modifié une de ces options, il est nécessaire de recharger le service ou de redémarrer Home Assistant.",
+                "title": "HA Cup Component"
+            }
+        },
+        "error": {
+            "invalid_update_interval": "Fréquence d'interrogation des données invalide. Doit être supérieure à 1 seconde et inférieure à 3600 secondes."
+        }
+    },
     "entity": {
         "sensor": {
             "major_updates": {
@@ -99,6 +113,11 @@
             },
             "last_checked": {
                 "name": "Dernière vérification"
+            }
+        },
+        "button": {
+            "action_refresh": {
+                "name": "Rafraichissement des données"
             }
         }
     }
