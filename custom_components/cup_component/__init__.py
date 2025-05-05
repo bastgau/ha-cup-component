@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -17,7 +18,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .api import API as CupAPI
-from .const import DOMAIN, MIN_TIME_BETWEEN_UPDATES
+from .const import CONF_UPDATE_INTERVAL, DOMAIN, MIN_TIME_BETWEEN_UPDATES
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -58,13 +59,20 @@ async def async_setup_entry(
         if not isinstance(await api_client.call_get_all_data(), dict):
             raise ConfigEntryAuthFailed
 
+    conf_update_interval: int | None = entry.data.get(CONF_UPDATE_INTERVAL)
+
+    if conf_update_interval is None:
+        update_interval = MIN_TIME_BETWEEN_UPDATES
+    else:
+        update_interval = timedelta(seconds=conf_update_interval)
+
     coordinator = DataUpdateCoordinator(
         hass,
         _LOGGER,
         config_entry=entry,
         name=name,
         update_method=async_update_data,
-        update_interval=MIN_TIME_BETWEEN_UPDATES,
+        update_interval=update_interval,
     )
 
     await coordinator.async_config_entry_first_refresh()
