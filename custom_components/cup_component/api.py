@@ -24,7 +24,7 @@ class API:
 
     _logger: logging.Logger | None
     _session: Any = None
-    _prefix: str = "/api/v3/json"
+    _prefix: str = "/api/v3"
 
     cache_metrics: dict[str, Any] = {}
     cache_images: dict[str, Any] = {}
@@ -69,6 +69,7 @@ class API:
         method: str,
         action: str | None = None,
         data: dict[str, Any] | None = None,
+        timeout: int = 10,
     ) -> dict[str, Any]:
         """Send HTTP requests with specified method, route, and data.
 
@@ -95,7 +96,7 @@ class API:
         request: requests.Response
 
         try:
-            async with asyncio.timeout(10):
+            async with asyncio.timeout(timeout):
                 if method.lower() == "post":
                     request = await self._session.post(url, json=data, headers=headers)
                 elif method.lower() == "put":
@@ -117,7 +118,7 @@ class API:
 
         if request.status < 400 and request.text != "":
             try:
-                if request.status != 204:
+                if request.status != 204 and action != "refresh":
                     result_data = await request.json()
 
             except ContentTypeError as err:
@@ -129,6 +130,26 @@ class API:
             "data": result_data,
         }
 
+    async def refresh(self) -> dict[str, Any]:
+        """Refresh image information from Cup Server
+
+        Returns:
+          result (dict[str, Any]): A dictionary with the keys "code", "reason", and "data".
+
+        """
+
+        url: str = "/refresh"
+
+        result: dict[str, Any] = await self._call(
+            url, action="refresh", method="GET", timeout=120
+        )
+
+        return {
+            "code": result["code"],
+            "reason": result["reason"],
+            "data": result["data"],
+        }
+
     async def call_get_all_data(self) -> dict[str, Any]:
         """Retrieve metrics from Cup Server
 
@@ -137,7 +158,7 @@ class API:
 
         """
 
-        url: str = ""
+        url: str = "/json"
 
         result: dict[str, Any] = await self._call(
             url,
@@ -159,8 +180,7 @@ class API:
         }
 
     def _clean_url(self, url: str):
-        """
-        the method Removes extra slashes in a URL while ignoring those immediately following "://".
+        """Removes extra slashes in a URL while ignoring those immediately following "://".
 
         Args:
             url (str): The URL from which extra slashes need to be removed.
