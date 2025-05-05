@@ -100,6 +100,11 @@
             "last_checked": {
                 "name": "Dernière vérification"
             }
+        },
+        "button": {
+            "action_refresh": {
+                "name": "Rafraichissement des données"
+            }
         }
     }
 }

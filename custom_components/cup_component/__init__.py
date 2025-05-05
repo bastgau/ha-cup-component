@@ -22,7 +22,7 @@ from .const import DOMAIN, MIN_TIME_BETWEEN_UPDATES
 _LOGGER = logging.getLogger(__name__)
 
 
-PLATFORMS = [Platform.SENSOR]
+PLATFORMS = [Platform.SENSOR, Platform.BUTTON]
 
 type CupComponentConfigEntry = ConfigEntry[CupComponentData]
 

@@ -100,6 +100,11 @@
             "last_checked": {
                 "name": "Last checked"
             }
+        },
+        "button": {
+            "action_refresh": {
+                "name": "Refresh data"
+            }
         }
     }
 }

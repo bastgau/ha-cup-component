@@ -1,6 +1,15 @@
 """The above classes represent the specific exceptions raised during the API calls."""
 
 
+class ActionExecutionException(Exception):
+    """The class `ActionExecutionException` is used to raise an exception when an action cannot be executed."""
+
+    message: str = "The action requested has failed. Please check HA logs or Cup logs."
+
+    def __init__(self) -> None:
+        super().__init__(self.message)
+
+
 class BadGatewayException(Exception):
     """The class `BadGatewayException` represents an exception for receiving an invalid response from an upstream server."""
 
