@@ -2,7 +2,6 @@
     "name": "HA Cup Component",
     "filename": "cup_component.zip",
     "hide_default_branch": true,
-    "hacs": "2.0.0",
     "country": "FR",
     "homeassistant": "2025.3",
     "zip_release": true,
