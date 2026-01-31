@@ -37,24 +37,47 @@ The integration is currently translated in few langages :
 
 ### Installation via HACS
 
-1. Open Home Assistant and go to HACS.
-2. Navigate to "Integrations" and click on "Add a custom repository".
-3. Add the GitHub repository URL of the integration.
-4. Search for "HA Cup Component" and install it.
-5. Restart Home Assistant.
+1. Add this repository as a custom repository to HACS:
 
-### One-click intallation
+[![Add Repository](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=bastgau&repository=ha-cup-component&category=Integration)
 
-[![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=bastgau&repository=ha-cup-component&category=Integration)
+2. Use HACS to install the integration.
+3. Restart Home Assistant.
+4. Set up the integration using the UI:
+
+[![Add Integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=cup_component)
+
 
 ### Manual Installation
 
 1. Download the integration files from the GitHub repository.
 2. Place the integration folder in the custom_components directory of Home Assistant.
 3. Restart Home Assistant.
+4. Set up the integration using the UI:
 
+[![Add Integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=cup_component)
 
-### Support & Contributions
+## Troubleshooting
+
+If you are having issues connecting, make sure you can successfully connect to http(s)://\<url\>:\<port\>/api/v3/json using a private browser window.
+
+There have also been reports of non-ssl instances not being entirely reliable. It is recommended to use a valid SSL certificate.
+
+## Debugging
+
+It is possible to show the info and debug logs for the Cup Component integration, to do this you need to enable logging in the configuration.yaml, example below:
+
+```
+logger:
+  default: warning
+  logs:
+    # Log for Cup Component integration
+    custom_components.cup_component: debug
+```
+
+Logs do not remove sensitive information so careful what you share, check what you are about to share and blank identifying information.
+
+## Support & Contributions
 
 If you encounter any issues or wish to contribute to improving this integration, feel free to open an issue or a pull request on the GitHub repository.
 
