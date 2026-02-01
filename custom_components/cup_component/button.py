@@ -16,6 +16,7 @@ from . import CupComponentConfigEntry
 from .api import API as CupAPI
 from .entity import CupComponentEntity
 from .exceptions import ActionExecutionException
+from .helper import create_entity_id_name
 
 PARALLEL_UPDATES = 1
 _LOGGER = logging.getLogger(__name__)
@@ -75,7 +76,10 @@ class CupComponentButton(CupComponentEntity, ButtonEntity):
         super().__init__(api, coordinator, name, server_unique_id)
         self.entity_description = description
         self._attr_unique_id = f"{self._server_unique_id}/{description.key}"
-        self.entity_id = f"button.{name}_{description.key}"
+
+        raw_name: str = f"button.{name}_{description.key}"
+        self.entity_id = create_entity_id_name(raw_name)
+
         self._is_enabled = True  # Initial state is enabled
 
     async def async_press(self) -> None:
