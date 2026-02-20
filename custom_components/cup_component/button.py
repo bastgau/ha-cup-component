@@ -80,8 +80,6 @@ class CupComponentButton(CupComponentEntity, ButtonEntity):
         raw_name: str = f"button.{name}_{description.key}"
         self.entity_id = create_entity_id_name(raw_name)
 
-        self._is_enabled = True  # Initial state is enabled
-
     async def async_press(self) -> None:
         """Press the button."""
 
@@ -103,8 +101,3 @@ class CupComponentButton(CupComponentEntity, ButtonEntity):
             _LOGGER.error("Unable to launch '%s' action: %s", action, result.get("data"))
 
         self.coordinator.async_update_listeners()
-
-    @property
-    def is_enabled(self) -> bool:
-        """Return whether the button is enabled."""
-        return self._is_enabled
