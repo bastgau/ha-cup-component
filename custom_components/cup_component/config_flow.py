@@ -104,8 +104,8 @@ class CupComponentdFlowHandler(ConfigFlow, domain=DOMAIN):
         ) as err:
             _LOGGER.debug("Connection failed: %s", err)
             return {CONF_URL: "invalid_path"}
-        except Exception as err:
-            _LOGGER.debug("Unknown exception: %s", err)
+        except Exception:
+            _LOGGER.exception("Unexpected exception during connection attempt to %s", self._config[CONF_URL])
             return {CONF_URL: "unknown_error"}
 
         return {}
