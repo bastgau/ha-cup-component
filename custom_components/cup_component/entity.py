@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from urllib.parse import urlparse, urlunparse
+
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
@@ -34,7 +36,9 @@ class CupComponentEntity(CoordinatorEntity[DataUpdateCoordinator[None]]):
     def device_info(self) -> DeviceInfo:
         """Return the device information of the entity."""
 
-        config_url = self.api.url.split("/api/v3/json")[0]
+        # Build the base URL (scheme + netloc only) from the API URL
+        parsed = urlparse(self.api.url)
+        config_url = urlunparse((parsed.scheme, parsed.netloc, "", "", "", ""))
 
         return DeviceInfo(
             identifiers={(DOMAIN, self._server_unique_id)},
