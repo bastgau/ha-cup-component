@@ -86,10 +86,9 @@ class CupComponentButton(CupComponentEntity, ButtonEntity):
         """Press the button."""
 
         action: str = self.entity_description.key
+        result: dict[str, Any] = {"code": 200, "data": None}
 
         try:
-            result: dict[str, Any] = {"code": 200}
-
             match action:
                 case "action_refresh":
                     result = await self.api.refresh()
@@ -98,12 +97,10 @@ class CupComponentButton(CupComponentEntity, ButtonEntity):
             if result["code"] != 200:
                 raise ActionExecutionException()
 
-            _LOGGER.info(
-                f"Action '{action}' just executed correctly for '{self._name}'."
-            )
+            _LOGGER.info("Action '%s' just executed correctly for '%s'.", action, self._name)
 
         except ActionExecutionException:
-            _LOGGER.error(f"Unable to launch '{action}' action : %s", result["data"])
+            _LOGGER.error("Unable to launch '%s' action: %s", action, result.get("data"))
 
         self.coordinator.async_update_listeners()
 
