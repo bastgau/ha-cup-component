@@ -179,8 +179,8 @@ class API:
             "data": result["data"],
         }
 
-    def _clean_url(self, url: str):
-        """Removes extra slashes in a URL while ignoring those immediately following "://".
+    def _clean_url(self, url: str) -> str:
+        """Remove extra slashes in a URL while ignoring those immediately following "://".
 
         Args:
             url (str): The URL from which extra slashes need to be removed.
@@ -194,7 +194,18 @@ class API:
         return corrected_url
 
     def _calculate_images(self, data: dict[str, Any]) -> None:
-        """..."""
+        """Parse image data from the API response and group images by update type.
+
+        Iterates over the list of images returned by the Cup API and categorises each
+        image into one of the following buckets: major_updates, minor_updates,
+        patch_updates, other_updates, unknown, or up_to_date. The result is stored
+        in the instance attribute ``cache_images``.
+
+        Args:
+            data (dict[str, Any]): The raw payload returned by the Cup API, expected
+                to contain an ``images`` key holding a list of image objects.
+
+        """
 
         mapping: dict[str, str] = {
             "major": "major_updates",
@@ -233,7 +244,19 @@ class API:
         self.cache_images = new_images
 
     def _calculate_metrics(self) -> None:
-        """..."""
+        """Compute summary counters from the categorised image cache.
+
+        Reads ``cache_images`` (populated by ``_calculate_images``) and builds a
+        flat dictionary of integer counters for each update category. Two derived
+        metrics are also computed:
+
+        - ``monitored_images``: total number of images across all categories.
+        - ``updates_available``: number of images that have an update pending,
+          excluding images in the ``up_to_date`` and ``unknown`` categories.
+
+        The result is stored in the instance attribute ``cache_metrics``.
+
+        """
 
         new_metrics: dict[str, int] = {
             "major_updates": 0,
