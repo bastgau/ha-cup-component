@@ -143,7 +143,6 @@ class CupComponentSensor(CupComponentEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
         """Return the state attributes."""
-        # Set the last start time attribute
         if isinstance(self.coordinator, DataUpdateCoordinator):
             if self.entity_description.key in self.api.cache_images:
                 return {
