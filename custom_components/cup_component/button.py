@@ -43,18 +43,16 @@ async def async_setup_entry(
     name = entry.data[CONF_NAME]
     cup_data = entry.runtime_data
 
-    entities: list[CupComponentButton] = []
-
-    for description in BUTTON_TYPES:
-        entities.append(
-            CupComponentButton(
-                cup_data.api,
-                cup_data.coordinator,
-                name,
-                entry.entry_id,
-                description,
-            )
+    entities: list[CupComponentButton] = [
+        CupComponentButton(
+            cup_data.api,
+            cup_data.coordinator,
+            name,
+            entry.entry_id,
+            description,
         )
+        for description in BUTTON_TYPES
+    ]
 
     async_add_entities(entities)
 
