@@ -108,6 +108,6 @@ class CupComponentButton(CupComponentEntity, ButtonEntity):
         self.coordinator.async_update_listeners()
 
     @property
-    def is_enabled(self):
+    def is_enabled(self) -> bool:
         """Return whether the button is enabled."""
         return self._is_enabled
