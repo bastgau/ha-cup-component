@@ -6,7 +6,7 @@ import logging
 from typing import Any
 
 import voluptuous as vol
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
+from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.const import CONF_NAME, CONF_URL
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import selector
@@ -79,7 +79,7 @@ class CupComponentdFlowHandler(ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry):
+    def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
         """Get the options flow for this handler."""
         return OptionsFlowHandler()
 
@@ -144,7 +144,7 @@ async def _async_validate_input(
 class OptionsFlowHandler(OptionsFlow):
     """Options flow used to change configuration (options) of existing instance of integration."""
 
-    async def async_step_init(self, user_input=None) -> ConfigFlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:  # we asked to validate values entered by user
             errors = await _async_validate_input(self.hass, user_input)
 
