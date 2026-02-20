@@ -20,8 +20,6 @@ from .exceptions import (
 class API:
     """Cup API Client."""
 
-    _last_calls: dict[str, datetime] = {}
-
     _logger: logging.Logger | None
     _session: Any = None
     _prefix: str = "/api/v3"
