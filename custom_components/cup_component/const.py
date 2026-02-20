@@ -5,7 +5,6 @@ from datetime import timedelta
 DOMAIN = "cup_component"
 DEFAULT_NAME = "Cup server name"
 DEFAULT_URL = "http://<YOUR_IP>:8000"
-# DEFAULT_URL = "http://nipogi.local:8765"
 
 CONF_UPDATE_INTERVAL = "update_interval"
 
