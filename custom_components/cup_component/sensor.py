@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, List
+from typing import Any
 
 from homeassistant.components.sensor import (
     EntityCategory,
@@ -119,7 +119,7 @@ class CupComponentSensor(CupComponentEntity, SensorEntity):
     def native_value(self) -> StateType:
         """Return the state of the device."""
 
-        possible_keys: List[str] = [
+        possible_keys: list[str] = [
             "major_updates",
             "minor_updates",
             "monitored_images",
