@@ -143,12 +143,11 @@ class CupComponentSensor(CupComponentEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
         """Return the state attributes."""
-        if isinstance(self.coordinator, DataUpdateCoordinator):
-            if self.entity_description.key in self.api.cache_images:
-                return {
-                    "images_list": json.dumps(
-                        self.api.cache_images[self.entity_description.key]
-                    )
-                }
+        if self.entity_description.key in self.api.cache_images:
+            return {
+                "images_list": json.dumps(
+                    self.api.cache_images[self.entity_description.key]
+                )
+            }
 
         return None
