@@ -1,23 +1,22 @@
 """The above class represents Cup API Client with methods for authentication, retrieving summary data, managing blocking status, and logging requests."""
 
 import asyncio
+from datetime import datetime
 import logging
 import re
-from datetime import datetime
-from socket import gaierror as GaiError
+from socket import gaierror
 from typing import Any
 
-import requests
-from aiohttp import ClientError, ContentTypeError
+from aiohttp import ClientError, ClientResponse, ClientSession, ContentTypeError
 
 from .exceptions import (
-    ClientConnectorException,
-    ContentTypeException,
+    ClientConnectorError,
+    ContentApiTypeError,
     handle_status,
 )
 
 
-class API:
+class Api:
     """Cup API Client."""
 
     _logger: logging.Logger | None
@@ -32,7 +31,7 @@ class API:
 
     def __init__(  # noqa: D417
         self,
-        session,
+        session: ClientSession,
         url: str,
         logger: logging.Logger | None = None,
     ) -> None:
@@ -61,13 +60,13 @@ class API:
 
         return self._logger
 
-    async def _call(
+    async def _call(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
         route: str,
         method: str,
         action: str | None = None,
         data: dict[str, Any] | None = None,
-        timeout: int = 10,
+        req_timeout: int = 10,
     ) -> dict[str, Any]:
         """Send HTTP requests with specified method, route, and data.
 
@@ -76,6 +75,7 @@ class API:
             method (str): Represents the HTTP method to be used. It can be one of the following: "post", "delete", or "get".
             action (str): Represents the action name requested.
             data (dict[str, Any] | None): Used to pass a dictionary containing data to be sent in the request when making a POST request.
+            req_timeout (int): Timeout in seconds
 
         Returns:
           result (dict[str, Any]): A dictionary is being returned with keys "code", "reason", and "data".
@@ -91,36 +91,39 @@ class API:
 
         self._get_logger().debug("Request (%s): %s %s", action, method.upper(), url)
 
-        request: requests.Response
+        request: ClientResponse
 
         try:
-            async with asyncio.timeout(timeout):
-                if method.lower() == "post":
+            method = method.lower()
+
+            async with asyncio.timeout(req_timeout):
+                if method == "post":
                     request = await self._session.post(url, json=data, headers=headers)
-                elif method.lower() == "put":
+                elif method == "put":
                     request = await self._session.put(url, json=data, headers=headers)
-                elif method.lower() == "delete":
+                elif method == "delete":
                     request = await self._session.delete(url, headers=headers)
-                elif method.lower() == "get":
+                elif method == "get":
                     request = await self._session.get(url, headers=headers)
                 else:
-                    raise RuntimeError("Method is not supported/implemented.")
+                    msg: str = "Method is not supported/implemented."
+                    raise RuntimeError(msg)
 
-        except (TimeoutError, ClientError, GaiError) as err:
-            raise ClientConnectorException from err
+        except (TimeoutError, ClientError, gaierror) as err:
+            raise ClientConnectorError from err
 
         result_data: dict[str, Any] = {}
 
         self._get_logger().debug("Status Code: %d", request.status)
         handle_status(request.status)
 
-        if request.status < 400 and request.text != "":
+        if request.status < 400 and request.content_length != 0 and request.content_length is not None:
             try:
                 if request.status != 204 and action != "refresh":
                     result_data = await request.json()
 
             except ContentTypeError as err:
-                raise ContentTypeException from err
+                raise ContentApiTypeError from err
 
         return {
             "code": request.status,
@@ -129,7 +132,7 @@ class API:
         }
 
     async def refresh(self) -> dict[str, Any]:
-        """Refresh image information from Cup Server
+        """Refresh image information from Cup Server.
 
         Returns:
           result (dict[str, Any]): A dictionary with the keys "code", "reason", and "data".
@@ -138,9 +141,7 @@ class API:
 
         url: str = "/refresh"
 
-        result: dict[str, Any] = await self._call(
-            url, action="refresh", method="GET", timeout=120
-        )
+        result: dict[str, Any] = await self._call(url, action="refresh", method="GET", req_timeout=15)
 
         return {
             "code": result["code"],
@@ -149,7 +150,7 @@ class API:
         }
 
     async def call_get_all_data(self) -> dict[str, Any]:
-        """Retrieve metrics from Cup Server
+        """Retrieve metrics from Cup Server.
 
         Returns:
           result (dict[str, Any]): A dictionary with the keys "code", "reason", and "data".
@@ -164,9 +165,7 @@ class API:
             method="GET",
         )
 
-        self.cache_last_checked = datetime.fromisoformat(
-            result["data"]["last_updated"].replace("Z", "+00:00")
-        )
+        self.cache_last_checked = datetime.fromisoformat(result["data"]["last_updated"])
 
         self._calculate_images(result["data"])
         self._calculate_metrics()
@@ -185,11 +184,11 @@ class API:
 
         Returns:
             str: The corrected URL with unwanted double slashes replaced by a single slash.
+
         """
 
         pattern = r"(?<!:)/{2,}"
-        corrected_url = re.sub(pattern, "/", url)
-        return corrected_url
+        return re.sub(pattern, "/", url)
 
     def _calculate_images(self, data: dict[str, Any]) -> None:
         """Parse image data from the API response and group images by update type.
@@ -271,9 +270,7 @@ class API:
         new_metrics["monitored_images"] = sum(new_metrics.values())
 
         new_metrics["updates_available"] = (
-            new_metrics["monitored_images"]
-            - new_metrics["up_to_date"]
-            - new_metrics["unknown"]
+            new_metrics["monitored_images"] - new_metrics["up_to_date"] - new_metrics["unknown"]
         )
 
         self.cache_metrics = new_metrics

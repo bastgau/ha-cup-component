@@ -3,25 +3,29 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.sensor import (
-    EntityCategory,
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import CONF_NAME
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.helpers.typing import StateType
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.const import CONF_NAME, EntityCategory
 
-from . import CupComponentConfigEntry
-from .api import API as ClientAPI
 from .entity import CupComponentEntity
 from .helper import create_entity_id_name
+
+if TYPE_CHECKING:
+    from datetime import datetime
+
+    from homeassistant.core import HomeAssistant
+    from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+    from homeassistant.helpers.typing import StateType
+    from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+
+    from . import CupComponentConfigEntry, CupComponentData
+    from .api import Api as ClientAPI
 
 SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
     SensorEntityDescription(
@@ -74,7 +78,7 @@ SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
 
 
 async def async_setup_entry(
-    hass: HomeAssistant,
+    hass: HomeAssistant,  # noqa: ARG001 # pylint:disable=unused-argument
     entry: CupComponentConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
@@ -83,40 +87,42 @@ async def async_setup_entry(
     cup_data = entry.runtime_data
     sensors = [
         CupComponentSensor(
-            cup_data.api,
-            cup_data.coordinator,
+            cup_data,
             name,
             entry.entry_id,
             description,
         )
         for description in SENSOR_TYPES
     ]
-    async_add_entities(sensors, True)
+    async_add_entities(sensors, update_before_add=True)
 
 
-class CupComponentSensor(CupComponentEntity, SensorEntity):
+class CupComponentSensor(CupComponentEntity, SensorEntity):  # pyright: ignore[reportIncompatibleVariableOverride]
     """Representation of a Cup Component sensor."""
 
     entity_description: SensorEntityDescription
 
     def __init__(
         self,
-        api: ClientAPI,
-        coordinator: DataUpdateCoordinator[None],
+        cup_data: CupComponentData,
         name: str,
         server_unique_id: str,
         description: SensorEntityDescription,
     ) -> None:
         """Initialize a Cup Component sensor."""
+
+        api: ClientAPI = cup_data.api
+        coordinator: DataUpdateCoordinator[None] = cup_data.coordinator
+
         super().__init__(api, coordinator, name, server_unique_id)
-        self.entity_description = description
+        self.entity_description = description  # pyright: ignore[reportIncompatibleVariableOverride]
         self._attr_unique_id = f"{self._server_unique_id}/{description.key}"
 
         raw_name: str = f"sensor.{name}_{description.key}"
         self.entity_id = create_entity_id_name(raw_name)
 
     @property
-    def native_value(self) -> StateType:
+    def native_value(self) -> StateType | datetime:  # pyright: ignore[reportIncompatibleVariableOverride]
         """Return the state of the device."""
 
         possible_keys: list[str] = [
@@ -141,13 +147,9 @@ class CupComponentSensor(CupComponentEntity, SensorEntity):
         return ""
 
     @property
-    def extra_state_attributes(self) -> dict[str, Any] | None:
+    def extra_state_attributes(self) -> dict[str, Any] | None:  # pyright: ignore[reportIncompatibleVariableOverride]
         """Return the state attributes."""
         if self.entity_description.key in self.api.cache_images:
-            return {
-                "images_list": json.dumps(
-                    self.api.cache_images[self.entity_description.key]
-                )
-            }
+            return {"images_list": json.dumps(self.api.cache_images[self.entity_description.key])}
 
         return None

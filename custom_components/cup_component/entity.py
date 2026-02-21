@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse, urlunparse
+
+from propcache.api import cached_property
 
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import (
@@ -10,8 +13,10 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
 )
 
-from .api import API as CupAPI
 from .const import DOMAIN
+
+if TYPE_CHECKING:
+    from .api import Api as ClientApi
 
 
 class CupComponentEntity(CoordinatorEntity[DataUpdateCoordinator[None]]):
@@ -21,7 +26,7 @@ class CupComponentEntity(CoordinatorEntity[DataUpdateCoordinator[None]]):
 
     def __init__(
         self,
-        api: CupAPI,
+        api: ClientApi,
         coordinator: DataUpdateCoordinator[None],
         name: str,
         server_unique_id: str,
@@ -32,7 +37,7 @@ class CupComponentEntity(CoordinatorEntity[DataUpdateCoordinator[None]]):
         self._name = name
         self._server_unique_id = server_unique_id
 
-    @property
+    @cached_property
     def device_info(self) -> DeviceInfo:
         """Return the device information of the entity."""
 

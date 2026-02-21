@@ -15,6 +15,7 @@ def create_entity_id_name(input_string: str) -> str:
 
     Returns:
         str: The normalized entity ID (e.g. ``"sensor.my_device_name"``).
+
     """
 
     # Split the string at the first "."
@@ -25,6 +26,4 @@ def create_entity_id_name(input_string: str) -> str:
     second_part = slugify(second_part)
 
     # Recombine with the first "." preserved
-    normalized_name = f"{first_part}.{second_part}"
-
-    return normalized_name
+    return f"{first_part}.{second_part}"
