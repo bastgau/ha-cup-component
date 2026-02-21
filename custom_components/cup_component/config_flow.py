@@ -6,13 +6,14 @@ import logging
 from typing import Any
 
 import voluptuous as vol
+
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.const import CONF_NAME, CONF_URL
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .api import API as ClientAPI
+from .api import Api as ClientAPI
 from .const import (
     CONF_UPDATE_INTERVAL,
     DEFAULT_NAME,
@@ -21,10 +22,10 @@ from .const import (
     MIN_TIME_BETWEEN_UPDATES,
 )
 from .exceptions import (
-    ClientConnectorException,
-    ContentTypeException,
-    MethodNotAllowedException,
-    NotFoundException,
+    ClientConnectorError,
+    ContentApiTypeError,
+    MethodNotAllowedError,
+    NotFoundError,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -37,11 +38,9 @@ class CupComponentdFlowHandler(ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         """Initialize the config flow."""
-        self._config: dict = {}
+        self._config: dict[str, Any] = {}
 
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Handle a flow initiated by the user."""
         errors = {}
 
@@ -55,9 +54,7 @@ class CupComponentdFlowHandler(ConfigFlow, domain=DOMAIN):
             self._abort_if_unique_id_configured()
 
             if not (errors := await self._async_try_connect()):
-                return self.async_create_entry(
-                    title=user_input[CONF_NAME], data=self._config
-                )
+                return self.async_create_entry(title=user_input[CONF_NAME], data=self._config)
 
         user_input = user_input or {}
         return self.async_show_form(
@@ -79,12 +76,12 @@ class CupComponentdFlowHandler(ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlowHandler:
+    def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlowHandler:  # noqa: ARG004
         """Get the options flow for this handler."""
         return OptionsFlowHandler()
 
     async def _async_try_connect(self) -> dict[str, str]:
-        session = async_get_clientsession(self.hass, False)
+        session = async_get_clientsession(self.hass, verify_ssl=False)
 
         api_client = ClientAPI(
             session=session,
@@ -94,30 +91,30 @@ class CupComponentdFlowHandler(ConfigFlow, domain=DOMAIN):
 
         try:
             await api_client.call_get_all_data()
-        except ClientConnectorException as err:
+        except ClientConnectorError as err:
             _LOGGER.debug("Connection failed: %s", err)
             return {CONF_URL: "cannot_connect"}
         except (
-            NotFoundException,
-            ContentTypeException,
-            MethodNotAllowedException,
+            NotFoundError,
+            ContentApiTypeError,
+            MethodNotAllowedError,
         ) as err:
             _LOGGER.debug("Connection failed: %s", err)
             return {CONF_URL: "invalid_path"}
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             _LOGGER.exception("Unexpected exception during connection attempt to %s", self._config[CONF_URL])
             return {CONF_URL: "unknown_error"}
 
         return {}
 
 
-def _get_data_option_schema(user_input) -> vol.Schema:
+def _get_data_option_schema() -> vol.Schema:
     return vol.Schema(
         {
             vol.Required(
                 CONF_UPDATE_INTERVAL,
             ): vol.All(
-                selector.NumberSelector(
+                selector.NumberSelector(  # pyright: ignore[reportUnknownMemberType]
                     selector.NumberSelectorConfig(
                         min=1,
                         max=3600,
@@ -132,9 +129,10 @@ def _get_data_option_schema(user_input) -> vol.Schema:
 
 
 async def _async_validate_input(
-    hass: HomeAssistant,
+    hass: HomeAssistant,  # noqa: ARG001 # pylint:disable=unused-argument
     user_input: dict[str, Any],
 ) -> Any:
+    """..."""
     if user_input[CONF_UPDATE_INTERVAL] == 1:
         return {CONF_UPDATE_INTERVAL: "invalid_update_interval"}
 
@@ -145,6 +143,7 @@ class OptionsFlowHandler(OptionsFlow):
     """Options flow used to change configuration (options) of existing instance of integration."""
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """..."""
         if user_input is not None:  # we asked to validate values entered by user
             errors = await _async_validate_input(self.hass, user_input)
 
@@ -153,15 +152,14 @@ class OptionsFlowHandler(OptionsFlow):
                     self.config_entry, data={**self.config_entry.data, **user_input}
                 )
                 return self.async_create_entry(title="", data={})
-            else:
-                return self.async_show_form(
-                    step_id="init",
-                    data_schema=self.add_suggested_values_to_schema(
-                        _get_data_option_schema(user_input),
-                        user_input,
-                    ),
-                    errors=dict(errors),
-                )
+            return self.async_show_form(
+                step_id="init",
+                data_schema=self.add_suggested_values_to_schema(
+                    _get_data_option_schema(),
+                    user_input,
+                ),
+                errors=dict(errors),
+            )
 
         update_interval = self.config_entry.data.get(CONF_UPDATE_INTERVAL, None)
 
@@ -170,7 +168,7 @@ class OptionsFlowHandler(OptionsFlow):
                 self.config_entry,
                 data={
                     **self.config_entry.data,
-                    **{CONF_UPDATE_INTERVAL: MIN_TIME_BETWEEN_UPDATES.seconds},
+                    CONF_UPDATE_INTERVAL: MIN_TIME_BETWEEN_UPDATES.seconds,
                 },
             )
 
@@ -178,7 +176,7 @@ class OptionsFlowHandler(OptionsFlow):
         return self.async_show_form(
             step_id="init",
             data_schema=self.add_suggested_values_to_schema(
-                _get_data_option_schema(user_input),
+                _get_data_option_schema(),
                 self.config_entry.data,
             ),
         )

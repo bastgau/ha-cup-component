@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from datetime import timedelta
+import logging
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -12,13 +13,15 @@ from homeassistant.const import (
     CONF_URL,
     Platform,
 )
-from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .api import API as CupAPI
+from .api import Api as ClientApi
 from .const import CONF_UPDATE_INTERVAL, DOMAIN, MIN_TIME_BETWEEN_UPDATES
+
+if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,13 +35,11 @@ type CupComponentConfigEntry = ConfigEntry[CupComponentData]
 class CupComponentData:
     """Runtime data definition."""
 
-    api: CupAPI
+    api: ClientApi
     coordinator: DataUpdateCoordinator[None]
 
 
-async def async_setup_entry(
-    hass: HomeAssistant, entry: CupComponentConfigEntry
-) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: CupComponentConfigEntry) -> bool:
     """Set up Cup Component entry."""
 
     name = entry.data[CONF_NAME]
@@ -46,8 +47,8 @@ async def async_setup_entry(
 
     _LOGGER.debug("Setting up %s integration with host %s", DOMAIN, url)
 
-    session = async_get_clientsession(hass, False)
-    api_client = CupAPI(
+    session = async_get_clientsession(hass, verify_ssl=False)
+    api_client = ClientApi(
         session=session,
         url=url,
         logger=_LOGGER,
@@ -56,7 +57,9 @@ async def async_setup_entry(
     async def async_update_data() -> None:
         """Fetch data from API endpoint."""
 
-        if not isinstance(await api_client.call_get_all_data(), dict):
+        result: Any = await api_client.call_get_all_data()
+
+        if not isinstance(result, dict):
             raise ConfigEntryAuthFailed
 
     conf_update_interval: int | None = entry.data.get(CONF_UPDATE_INTERVAL)
