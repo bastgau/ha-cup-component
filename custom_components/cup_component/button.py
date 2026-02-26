@@ -114,12 +114,12 @@ class CupComponentButton(CupComponentEntity, ButtonEntity):  # pyright: ignore[r
         result: dict[str, Any] = {"code": 200, "data": None}
 
         try:
-            match str(action):
+            match action:
                 case "action_refresh":
                     result = await self.api.refresh()
                     await self.api.call_get_all_data()
                 case _:
-                    pass
+                    raise ActionExecutionError  # noqa: TRY301
 
             if result["code"] != 200:
                 raise ActionExecutionError  # noqa: TRY301
@@ -127,6 +127,6 @@ class CupComponentButton(CupComponentEntity, ButtonEntity):  # pyright: ignore[r
             _LOGGER.info("Action '%s' just executed correctly for '%s'.", action, self._name)
 
         except ActionExecutionError:
-            _LOGGER.error("Unable to launch '%s' action: %s", action, result.get("data", {}))  # noqa: TRY400
-
-        self.coordinator.async_update_listeners()
+            _LOGGER.exception("Unable to launch '%s' action: %s", action, result.get("data", {}))  # ai: ignore
+        else:
+            self.coordinator.async_update_listeners()

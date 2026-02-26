@@ -13,12 +13,11 @@ from homeassistant.const import (
     CONF_URL,
     Platform,
 )
-from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .api import CupApi
-from .const import CONF_UPDATE_INTERVAL, DOMAIN, MIN_TIME_BETWEEN_UPDATES
+from .const import CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL, DOMAIN
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -71,13 +70,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: CupComponentConfigEntry)
 
         """
 
-        if not isinstance(await api_client.call_get_all_data(), dict):  # pyright: ignore[reportUnnecessaryIsInstance]
-            raise ConfigEntryAuthFailed
+        await api_client.call_get_all_data()
 
     conf_update_interval: int | None = entry.data.get(CONF_UPDATE_INTERVAL)
 
     if conf_update_interval is None:
-        update_interval = MIN_TIME_BETWEEN_UPDATES
+        update_interval = DEFAULT_UPDATE_INTERVAL
     else:
         update_interval = timedelta(seconds=conf_update_interval)
 

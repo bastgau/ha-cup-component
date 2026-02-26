@@ -3,7 +3,6 @@
 import asyncio
 from datetime import datetime
 import logging
-from logging import Logger
 import re
 from socket import gaierror
 from typing import Any
@@ -20,7 +19,7 @@ from .exceptions import (
 class CupApi:
     """Cup API Client."""
 
-    _logger: Logger | None
+    _logger: logging.Logger | None
     _session: ClientSession
     _prefix: str = "/api/v3"
 
@@ -28,14 +27,14 @@ class CupApi:
         self,
         session: ClientSession,
         url: str,
-        logger: Logger | None = None,
+        logger: logging.Logger | None = None,
     ) -> None:
         """Initialize Cup API Client object with an API URL and an optional logger.
 
         Args:
             session (ClientSession): The aiohttp client session used to perform HTTP requests.
             url (str): Represents the URL of API endpoint.
-            logger (Logger | None): Expects an object of type `Logger` or `None` which will be used to display debug message.
+            logger (logging.Logger | None): Expects an object of type `logging.Logger` or `None` which will be used to display debug message.
 
         """
 
@@ -47,11 +46,11 @@ class CupApi:
         self.cache_images: dict[str, list[Any]] = {}
         self.cache_last_checked: datetime | None = None
 
-    def _get_logger(self) -> Logger:
+    def _get_logger(self) -> logging.Logger:
         """Return a logger if it exists, otherwise it creates a new logger.
 
         Returns:
-            Logger: The logger provided during object initialization, otherwise a new logger is created.
+            logging.Logger: The logger provided during object initialization, otherwise a new logger is created.
 
         """
 
@@ -60,22 +59,22 @@ class CupApi:
 
         return self._logger
 
-    async def _call(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    async def _call(
         self,
         route: str,
         method: str,
-        action: str | None = None,
         data: dict[str, Any] | None = None,
         req_timeout: int = 10,
+        parse_response: bool = True,
     ) -> dict[str, Any]:
         """Send HTTP requests with specified method, route, and data.
 
         Args:
             route (str): Represents the specific endpoint that you want to call.
             method (str): Represents the HTTP method to be used. It can be one of the following: "post", "delete", "get", etc.
-            action (str | None): Represents the action name requested.
             data (dict[str, Any] | None): Used to pass a dictionary containing data to be sent in the request when making a POST request.
             req_timeout (int): The duration controlling the request timeout.
+            parse_response (bool): Whether to parse the JSON response body. Set to False when no response body is expected.
 
         Returns:
             dict[str, Any]: A dictionary is being returned with keys "code", "reason", and "data".
@@ -89,26 +88,10 @@ class CupApi:
             "content-type": "application/json",
         }
 
-        self._get_logger().debug("Request (%s): %s %s", action, method.upper(), url)
-
-        request: ClientResponse
+        self._get_logger().debug("Request (%s): %s %s", route, method.upper(), url)
 
         try:
-            method = method.lower()
-
-            async with asyncio.timeout(req_timeout):
-                if method == "post":
-                    request = await self._session.post(url, json=data, headers=headers)
-                elif method == "put":
-                    request = await self._session.put(url, json=data, headers=headers)
-                elif method == "delete":
-                    request = await self._session.delete(url, headers=headers)
-                elif method == "get":
-                    request = await self._session.get(url, headers=headers)
-                else:
-                    msg: str = "Method is not supported/implemented."
-                    raise RuntimeError(msg)
-
+            request: ClientResponse = await self._dispatch_request(url, method, data, headers, req_timeout)
         except (TimeoutError, ClientError, gaierror) as err:
             raise ClientConnectorError from err
 
@@ -119,7 +102,7 @@ class CupApi:
 
         if request.status < 400 and request.content_length != 0 and request.content_length is not None:
             try:
-                if request.status != 204 and action != "refresh":
+                if request.status != 204 and parse_response:
                     result_data = await request.json()
 
             except ContentTypeError as err:
@@ -131,6 +114,46 @@ class CupApi:
             "data": result_data,
         }
 
+    async def _dispatch_request(
+        self,
+        url: str,
+        method: str,
+        data: dict[str, Any] | None,
+        headers: dict[str, str],
+        req_timeout: int,
+    ) -> ClientResponse:
+        """Dispatch an HTTP request using the appropriate aiohttp method.
+
+        Args:
+            url (str): The full URL to send the request to.
+            method (str): The HTTP method to use (get, post, put, delete).
+            data (dict[str, Any] | None): Optional payload for POST or PUT requests.
+            headers (dict[str, str]): HTTP headers to include in the request.
+            req_timeout (int): Timeout duration in seconds.
+
+        Returns:
+            ClientResponse: The aiohttp response object.
+
+        Raises:
+            RuntimeError: If the HTTP method is not supported.
+
+        """
+
+        method = method.lower()
+
+        async with asyncio.timeout(req_timeout):
+            if method == "post":
+                return await self._session.post(url, json=data, headers=headers)
+            if method == "put":
+                return await self._session.put(url, json=data, headers=headers)
+            if method == "delete":
+                return await self._session.delete(url, headers=headers)
+            if method == "get":
+                return await self._session.get(url, headers=headers)
+
+            msg: str = "Method is not supported/implemented."
+            raise RuntimeError(msg)
+
     async def refresh(self) -> dict[str, Any]:
         """Refresh image information from Cup Server.
 
@@ -141,7 +164,7 @@ class CupApi:
 
         url: str = "/refresh"
 
-        result: dict[str, Any] = await self._call(url, action="refresh", method="GET")
+        result: dict[str, Any] = await self._call(url, method="GET", parse_response=False)
 
         return {
             "code": result["code"],
@@ -159,16 +182,27 @@ class CupApi:
 
         url: str = "/json"
 
-        result: dict[str, Any] = await self._call(
-            url,
-            action="get_all_data",
-            method="GET",
-        )
+        result: dict[str, Any] = await self._call(url, method="GET")
 
-        self.cache_last_checked = datetime.fromisoformat(result["data"]["last_updated"])
+        last_updated = result["data"].get("last_updated")
 
-        self._calculate_images(result["data"])
-        self._calculate_metrics()
+        if last_updated is None:
+            msg: str = "Missing 'last_updated' field in API response."
+            raise ContentApiTypeError(msg)
+
+        self.cache_last_checked = datetime.fromisoformat(last_updated)
+
+        try:
+            self._calculate_images(result["data"])
+        except KeyError:  # ai: ignore
+            if self._logger is not None:
+                self._logger.exception("Incorrect output format for _calculate_images().")
+
+        try:
+            self._calculate_metrics()
+        except KeyError:  # ai: ignore
+            if self._logger is not None:
+                self._logger.exception("Incorrect output format for _calculate_metrics().")
 
         return {
             "code": result["code"],
@@ -236,7 +270,7 @@ class CupApi:
 
             if "version_update_type" in image["result"]["info"]:
                 key: str = image["result"]["info"]["version_update_type"]
-                new_images[mapping[key]].append(image)
+                new_images[mapping[key]].append(image)  # KeyError thrown later
                 continue
 
             new_images["other_updates"].append(image)

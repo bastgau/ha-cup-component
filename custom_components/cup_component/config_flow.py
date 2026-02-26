@@ -9,7 +9,7 @@ import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.const import CONF_NAME, CONF_URL
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import callback
 from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -17,9 +17,10 @@ from .api import CupApi
 from .const import (
     CONF_UPDATE_INTERVAL,
     DEFAULT_NAME,
+    DEFAULT_UPDATE_INTERVAL,
     DEFAULT_URL,
     DOMAIN,
-    MIN_TIME_BETWEEN_UPDATES,
+    MIN_SELECTED_UPDATE_INTERVAL,
 )
 from .exceptions import (
     ClientConnectorError,
@@ -31,7 +32,7 @@ from .exceptions import (
 _LOGGER = logging.getLogger(__name__)
 
 
-class CupComponentdFlowHandler(ConfigFlow, domain=DOMAIN):
+class CupComponentFlowHandler(ConfigFlow, domain=DOMAIN):
     """Handle a Cup Component config flow."""
 
     VERSION = 1
@@ -64,18 +65,18 @@ class CupComponentdFlowHandler(ConfigFlow, domain=DOMAIN):
             if not (errors := await self._async_try_connect()):
                 return self.async_create_entry(title=user_input[CONF_NAME], data=self._config)
 
-        user_input = user_input or {}
+        raw_user_input: dict[str, Any] = user_input or {}
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema(
                 {
                     vol.Required(
                         CONF_NAME,
-                        default=user_input.get(CONF_NAME, DEFAULT_NAME),
+                        default=raw_user_input.get(CONF_NAME, DEFAULT_NAME),
                     ): str,
                     vol.Required(
                         CONF_URL,
-                        default=user_input.get(CONF_URL, DEFAULT_URL),
+                        default=raw_user_input.get(CONF_URL, DEFAULT_URL),
                     ): str,
                 }
             ),
@@ -124,7 +125,8 @@ class CupComponentdFlowHandler(ConfigFlow, domain=DOMAIN):
         ) as err:
             _LOGGER.debug("Connection failed: %s", err)
             return {CONF_URL: "invalid_path"}
-        except Exception:  # pylint: disable=broad-exception-caught
+        # broad-exception-caught: Intentional: all unexpected errors are caught here to return a user-friendly error in the config flow UI
+        except Exception:  # pylint: disable=broad-exception-caught # ai: ignore
             _LOGGER.exception("Unexpected exception during connection attempt to %s", self._config[CONF_URL])
             return {CONF_URL: "unknown_error"}
 
@@ -145,7 +147,7 @@ def _get_data_option_schema() -> vol.Schema:
             ): vol.All(
                 selector.NumberSelector(  # pyright: ignore[reportUnknownMemberType]
                     selector.NumberSelectorConfig(
-                        min=1,
+                        min=MIN_SELECTED_UPDATE_INTERVAL.seconds,
                         max=3600,
                         step=1,
                         mode=selector.NumberSelectorMode.BOX,
@@ -158,20 +160,18 @@ def _get_data_option_schema() -> vol.Schema:
 
 
 async def _async_validate_input(
-    hass: HomeAssistant,  # noqa: ARG001 # pylint: disable=unused-argument
     user_input: dict[str, Any],
 ) -> dict[str, str]:
     """Validate user input from the options flow form.
 
     Args:
-        hass (HomeAssistant): The Home Assistant instance.
         user_input (dict[str, Any]): The data submitted by the user in the options form.
 
     Returns:
         dict[str, str]: A dictionary mapping field names to error keys if validation fails, or an empty dict if valid.
 
     """
-    if user_input[CONF_UPDATE_INTERVAL] == 1:
+    if user_input[CONF_UPDATE_INTERVAL] < MIN_SELECTED_UPDATE_INTERVAL.seconds:
         return {CONF_UPDATE_INTERVAL: "invalid_update_interval"}
 
     return {}
@@ -191,7 +191,7 @@ class OptionsFlowHandler(OptionsFlow):
 
         """
         if user_input is not None:  # we asked to validate values entered by user
-            errors = await _async_validate_input(self.hass, user_input)
+            errors = await _async_validate_input(user_input)
 
             if not errors:
                 self.hass.config_entries.async_update_entry(
@@ -207,6 +207,15 @@ class OptionsFlowHandler(OptionsFlow):
                 errors=dict(errors),
             )
 
+        return self._async_show_init_form()
+
+    def _async_show_init_form(self) -> ConfigFlowResult:
+        """Initialise the default update interval if missing and display the options form.
+
+        Returns:
+            ConfigFlowResult: The form result with pre-filled default values.
+
+        """
         update_interval = self.config_entry.data.get(CONF_UPDATE_INTERVAL, None)
 
         if update_interval is None:
@@ -214,7 +223,7 @@ class OptionsFlowHandler(OptionsFlow):
                 self.config_entry,
                 data={
                     **self.config_entry.data,
-                    CONF_UPDATE_INTERVAL: MIN_TIME_BETWEEN_UPDATES.seconds,
+                    CONF_UPDATE_INTERVAL: DEFAULT_UPDATE_INTERVAL.seconds,
                 },
             )
 

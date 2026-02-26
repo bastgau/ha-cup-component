@@ -18,6 +18,10 @@ def create_entity_id_name(input_string: str) -> str:
 
     """
 
+    if "." not in input_string:
+        msg: str = f"Invalid entity ID format: {input_string!r}"
+        raise ValueError(msg)
+
     # Split the string at the first "."
     first_part, second_part = input_string.split(".", 1)
 

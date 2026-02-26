@@ -99,6 +99,8 @@ disable = [
   "unexpected-keyword-arg",
   "used-before-assignment",
 ]
+max-args = 6
+max-positional-arguments = 6
 
 [tool.mypy]
 # Specify the target platform details in config, so your developers are

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.sensor import (
@@ -26,6 +25,18 @@ if TYPE_CHECKING:
 
     from . import CupComponentConfigEntry, CupComponentData
     from .api import CupApi
+
+# Keys corresponding to numeric metrics stored in cache_metrics
+METRIC_SENSOR_KEYS: tuple[str, ...] = (
+    "major_updates",
+    "minor_updates",
+    "monitored_images",
+    "other_updates",
+    "patch_updates",
+    "unknown",
+    "up_to_date",
+    "updates_available",
+)
 
 SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
     SensorEntityDescription(
@@ -140,34 +151,21 @@ class CupComponentSensor(CupComponentEntity, SensorEntity):  # pyright: ignore[r
         self.entity_id = create_entity_id_name(raw_name)
 
     @property
-    def native_value(self) -> StateType | datetime:  # pyright: ignore[reportIncompatibleVariableOverride]
+    def native_value(self) -> StateType | datetime | None:  # pyright: ignore[reportIncompatibleVariableOverride]
         """Return the state of the device.
 
         Returns:
-            StateType | datetime: The current value of the sensor.
+            StateType | datetime | None: The current value of the sensor.
 
         """
 
-        possible_keys: list[str] = [
-            "major_updates",
-            "minor_updates",
-            "monitored_images",
-            "other_updates",
-            "patch_updates",
-            "unknown",
-            "up_to_date",
-            "updates_available",
-        ]
-
-        entity_description_key: str = self.entity_description.key
-
-        if self.entity_description.key in possible_keys:
-            return self.api.cache_metrics[entity_description_key]
+        if self.entity_description.key in METRIC_SENSOR_KEYS:
+            return self.api.cache_metrics.get(self.entity_description.key)
 
         if self.entity_description.key == "last_checked":
             return self.api.cache_last_checked
 
-        return ""
+        return None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:  # pyright: ignore[reportIncompatibleVariableOverride]
@@ -178,6 +176,6 @@ class CupComponentSensor(CupComponentEntity, SensorEntity):  # pyright: ignore[r
 
         """
         if self.entity_description.key in self.api.cache_images:
-            return {"images_list": json.dumps(self.api.cache_images[self.entity_description.key])}
+            return {"images_list": self.api.cache_images[self.entity_description.key]}
 
         return None

@@ -8,4 +8,5 @@ DEFAULT_URL = "http://<YOUR_IP>:8000"
 
 CONF_UPDATE_INTERVAL = "update_interval"
 
-MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=300)
+DEFAULT_UPDATE_INTERVAL = timedelta(seconds=300)
+MIN_SELECTED_UPDATE_INTERVAL = timedelta(seconds=15)

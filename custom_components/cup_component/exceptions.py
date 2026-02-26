@@ -164,14 +164,14 @@ class RequestFailedError(Exception):
         super().__init__(self.message)
 
 
-class ServerErrorError(Exception):
-    """The class `ServerErrorError` defines an exception for internal server errors."""
+class ServerError(Exception):
+    """The class `ServerError` defines an exception for internal server errors."""
 
     def __init__(
         self,
         message: str = "An internal server error occurred.",
     ) -> None:
-        """Initialize ServerErrorError with an optional custom message.
+        """Initialize ServerError with an optional custom message.
 
         Args:
             message (str): The error message describing the internal server error.
@@ -268,7 +268,7 @@ def handle_status(status_code: int) -> None:
         404: NotFoundError,
         405: MethodNotAllowedError,
         429: TooManyRequestsError,
-        500: ServerErrorError,
+        500: ServerError,
         502: BadGatewayError,
         503: ServiceUnavailableError,
         504: GatewayTimeoutError,
