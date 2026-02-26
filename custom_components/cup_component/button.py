@@ -43,7 +43,17 @@ async def async_setup_entry(
     entry: CupComponentConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """..."""
+    """Set up Cup Component button entities from a config entry.
+
+    Args:
+        hass (HomeAssistant): The Home Assistant instance.
+        entry (CupComponentConfigEntry): The config entry for this integration.
+        async_add_entities (AddConfigEntryEntitiesCallback): Callback to register new entities.
+
+    Returns:
+        None.
+
+    """
     name = entry.data[CONF_NAME]
     cup_data = entry.runtime_data
 
@@ -72,7 +82,15 @@ class CupComponentButton(CupComponentEntity, ButtonEntity):  # pyright: ignore[r
         server_unique_id: str,
         description: CupComponentButtonEntityDescription,
     ) -> None:
-        """Initialize Cup Component button."""
+        """Initialize Cup Component button.
+
+        Args:
+            cup_data (CupComponentData): Runtime data containing the API client and coordinator.
+            name (str): The human-readable name of the Cup server.
+            server_unique_id (str): The unique identifier of the config entry.
+            description (CupComponentButtonEntityDescription): The entity description for this button.
+
+        """
 
         api: CupApi = cup_data.api
         coordinator: DataUpdateCoordinator[None] = cup_data.coordinator
@@ -85,7 +103,12 @@ class CupComponentButton(CupComponentEntity, ButtonEntity):  # pyright: ignore[r
         self.entity_id = create_entity_id_name(raw_name)
 
     async def async_press(self) -> None:
-        """Press the button."""
+        """Press the button.
+
+        Returns:
+            None.
+
+        """
 
         action: str = self.entity_description.key
         result: dict[str, Any] = {"code": 200, "data": None}

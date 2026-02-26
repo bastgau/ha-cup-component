@@ -29,7 +29,15 @@ class CupComponentEntity(CoordinatorEntity[DataUpdateCoordinator[None]]):
         name: str,
         server_unique_id: str,
     ) -> None:
-        """Initialize a Cup Component entity."""
+        """Initialize a Cup Component entity.
+
+        Args:
+            api (CupApi): The Cup API client instance.
+            coordinator (DataUpdateCoordinator[None]): The data update coordinator.
+            name (str): The human-readable name of the Cup server.
+            server_unique_id (str): The unique identifier of the config entry.
+
+        """
         super().__init__(coordinator)
         self.api = api
         self._name = name
@@ -37,7 +45,12 @@ class CupComponentEntity(CoordinatorEntity[DataUpdateCoordinator[None]]):
 
     @property
     def device_info(self) -> DeviceInfo:  # pyright: ignore[reportIncompatibleVariableOverride]
-        """Return the device information of the entity."""
+        """Return the device information of the entity.
+
+        Returns:
+            DeviceInfo: The device information associated with this entity.
+
+        """
 
         # Build the base URL (scheme + netloc only) from the API URL
         parsed = urlparse(self.api.url)

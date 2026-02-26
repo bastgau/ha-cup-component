@@ -40,7 +40,16 @@ class CupComponentData:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: CupComponentConfigEntry) -> bool:
-    """Set up Cup Component entry."""
+    """Set up Cup Component entry.
+
+    Args:
+        hass (HomeAssistant): The Home Assistant instance.
+        entry (CupComponentConfigEntry): The config entry for this integration.
+
+    Returns:
+        bool: True if the setup was successful.
+
+    """
 
     name = entry.data[CONF_NAME]
     url = entry.data[CONF_URL]
@@ -55,7 +64,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: CupComponentConfigEntry)
     )
 
     async def async_update_data() -> None:
-        """Fetch data from API endpoint."""
+        """Fetch data from API endpoint.
+
+        Returns:
+            None.
+
+        """
 
         if not isinstance(await api_client.call_get_all_data(), dict):  # pyright: ignore[reportUnnecessaryIsInstance]
             raise ConfigEntryAuthFailed
@@ -83,5 +97,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: CupComponentConfigEntry)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload Cup Component entry."""
+    """Unload Cup Component entry.
+
+    Args:
+        hass (HomeAssistant): The Home Assistant instance.
+        entry (ConfigEntry): The config entry to unload.
+
+    Returns:
+        bool: True if the unload was successful.
+
+    """
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

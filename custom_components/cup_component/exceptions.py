@@ -7,7 +7,7 @@ class ActionExecutionError(Exception):
     message: str = "The action requested has failed. Please check HA logs or Cup logs."
 
     def __init__(self) -> None:
-        """..."""
+        """Initialize ActionExecutionError with a default error message."""
         super().__init__(self.message)
 
 
@@ -18,7 +18,12 @@ class BadGatewayError(Exception):
         self,
         message: str = "Received an invalid response from an upstream server.",
     ) -> None:
-        """..."""
+        """Initialize BadGatewayError with an optional custom message.
+
+        Args:
+            message (str): The error message describing the bad gateway condition.
+
+        """
         self.message = message
         super().__init__(self.message)
 
@@ -30,7 +35,12 @@ class BadRequestError(Exception):
         self,
         message: str = "The request was unacceptable, often due to a missing required parameter",
     ) -> None:
-        """..."""
+        """Initialize BadRequestError with an optional custom message.
+
+        Args:
+            message (str): The error message describing the bad request condition.
+
+        """
         self.message = message
         super().__init__(self.message)
 
@@ -42,7 +52,12 @@ class ClientConnectorError(Exception):
         self,
         message: str = "The Cup server seems to be unreachable.",
     ) -> None:
-        """..."""
+        """Initialize ClientConnectorError with an optional custom message.
+
+        Args:
+            message (str): The error message describing the connection failure.
+
+        """
         self.message = message
         super().__init__(self.message)
 
@@ -54,7 +69,12 @@ class ContentApiTypeError(Exception):
         self,
         message: str = "Invalid content type returned by the API.",
     ) -> None:
-        """..."""
+        """Initialize ContentApiTypeError with an optional custom message.
+
+        Args:
+            message (str): The error message describing the content type issue.
+
+        """
         self.message = message
         super().__init__(self.message)
 
@@ -66,7 +86,12 @@ class ForbiddenError(Exception):
         self,
         message: str = "The API key doesn't have permissions to perform the request.",
     ) -> None:
-        """..."""
+        """Initialize ForbiddenError with an optional custom message.
+
+        Args:
+            message (str): The error message describing the forbidden access condition.
+
+        """
         self.message = message
         super().__init__(self.message)
 
@@ -78,7 +103,12 @@ class GatewayTimeoutError(Exception):
         self,
         message: str = "The server, while acting as a gateway, timed out waiting for another server.",
     ) -> None:
-        """..."""
+        """Initialize GatewayTimeoutError with an optional custom message.
+
+        Args:
+            message (str): The error message describing the gateway timeout condition.
+
+        """
         self.message = message
         super().__init__(self.message)
 
@@ -90,7 +120,12 @@ class MethodNotAllowedError(Exception):
         self,
         message: str = "The HTTP method is not supported on the server.",
     ) -> None:
-        """..."""
+        """Initialize MethodNotAllowedError with an optional custom message.
+
+        Args:
+            message (str): The error message describing the unsupported HTTP method.
+
+        """
         self.message = message
         super().__init__(self.message)
 
@@ -102,7 +137,12 @@ class NotFoundError(Exception):
         self,
         message: str = "The requested resource doesn't exist.",
     ) -> None:
-        """..."""
+        """Initialize NotFoundError with an optional custom message.
+
+        Args:
+            message (str): The error message describing the missing resource.
+
+        """
         self.message = message
         super().__init__(self.message)
 
@@ -114,7 +154,12 @@ class RequestFailedError(Exception):
         self,
         message: str = "The parameters were valid but the request failed.",
     ) -> None:
-        """..."""
+        """Initialize RequestFailedError with an optional custom message.
+
+        Args:
+            message (str): The error message describing the request failure.
+
+        """
         self.message = message
         super().__init__(self.message)
 
@@ -126,7 +171,12 @@ class ServerErrorError(Exception):
         self,
         message: str = "An internal server error occurred.",
     ) -> None:
-        """..."""
+        """Initialize ServerErrorError with an optional custom message.
+
+        Args:
+            message (str): The error message describing the internal server error.
+
+        """
         self.message = message
         super().__init__(self.message)
 
@@ -138,7 +188,12 @@ class ServiceUnavailableError(Exception):
         self,
         message: str = "The server is temporarily unavailable, usually due to maintenance or overload.",
     ) -> None:
-        """..."""
+        """Initialize ServiceUnavailableError with an optional custom message.
+
+        Args:
+            message (str): The error message describing the service unavailability.
+
+        """
         self.message = message
         super().__init__(self.message)
 
@@ -150,7 +205,12 @@ class TooManyRequestsError(Exception):
         self,
         message: str = "Too many requests hit the API too quickly.",
     ) -> None:
-        """..."""
+        """Initialize TooManyRequestsError with an optional custom message.
+
+        Args:
+            message (str): The error message describing the rate limit condition.
+
+        """
         self.message = message
         super().__init__(self.message)
 
@@ -162,7 +222,12 @@ class UnauthorizedError(Exception):
         self,
         message: str = "No session identity provided for endpoint requiring authorization.",
     ) -> None:
-        """..."""
+        """Initialize UnauthorizedError with an optional custom message.
+
+        Args:
+            message (str): The error message describing the authorization failure.
+
+        """
         self.message = message
         super().__init__(self.message)
 
@@ -171,11 +236,24 @@ def handle_status(status_code: int) -> None:
     """Raise specific exceptions based on the input status code.
 
     Args:
-      status_code (int): Represents the status code and handles it based on the provided mapping.
+        status_code (int): Represents the status code and handles it based on the provided mapping.
 
     Returns:
-      result (None) : If the status code is less than 400, it returns `None`. If the status code corresponds to a known error code
-      in the mapping, it raises the corresponding exception else the exception `NotImplementedError` is thrown.
+        None.
+
+    Raises:
+        BadRequestError: If the status code is 400.
+        UnauthorizedError: If the status code is 401.
+        RequestFailedError: If the status code is 402.
+        ForbiddenError: If the status code is 403.
+        NotFoundError: If the status code is 404.
+        MethodNotAllowedError: If the status code is 405.
+        TooManyRequestsError: If the status code is 429.
+        ServerErrorError: If the status code is 500.
+        BadGatewayError: If the status code is 502.
+        ServiceUnavailableError: If the status code is 503.
+        GatewayTimeoutError: If the status code is 504.
+        NotImplementedError: If the status code is not mapped in the exception map.
 
     """
 

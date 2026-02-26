@@ -1,8 +1,9 @@
-"""The above class represents Cup API Client with methods for authentication, retrieving summary data, managing blocking status, and logging requests."""
+"""Cup API client for retrieving summary data, managing image refresh, and handling HTTP communication with the Cup server."""
 
 import asyncio
 from datetime import datetime
 import logging
+from logging import Logger
 import re
 from socket import gaierror
 from typing import Any
@@ -19,7 +20,7 @@ from .exceptions import (
 class CupApi:
     """Cup API Client."""
 
-    _logger: logging.Logger | None
+    _logger: Logger | None
     _session: Any = None
     _prefix: str = "/api/v3"
 
@@ -29,17 +30,18 @@ class CupApi:
 
     url: str = ""
 
-    def __init__(  # noqa: D417
+    def __init__(
         self,
         session: ClientSession,
         url: str,
-        logger: logging.Logger | None = None,
+        logger: Logger | None = None,
     ) -> None:
         """Initialize Cup API Client object with an API URL and an optional logger.
 
         Args:
-          url (str): Represents the URL of API endpoint.
-          logger (Logger | None): Expects an object of type `Logger` or `None` which will be used to display debug message.
+            session (ClientSession): The aiohttp client session used to perform HTTP requests.
+            url (str): Represents the URL of API endpoint.
+            logger (Logger | None): Expects an object of type `Logger` or `None` which will be used to display debug message.
 
         """
 
@@ -47,11 +49,11 @@ class CupApi:
         self._logger = logger
         self._session = session
 
-    def _get_logger(self) -> logging.Logger:
+    def _get_logger(self) -> Logger:
         """Return a logger if it exists, otherwise it creates a new logger.
 
         Returns:
-          result (Logger): The logger provided during object initialization, otherwise a new logger is created.
+            Logger: The logger provided during object initialization, otherwise a new logger is created.
 
         """
 
@@ -72,13 +74,13 @@ class CupApi:
 
         Args:
             route (str): Represents the specific endpoint that you want to call.
-            method (str): Represents the HTTP method to be used. It can be one of the following: "post", "delete", or "get".
-            action (str): Represents the action name requested.
+            method (str): Represents the HTTP method to be used. It can be one of the following: "post", "delete", "get", etc.
+            action (str | None): Represents the action name requested.
             data (dict[str, Any] | None): Used to pass a dictionary containing data to be sent in the request when making a POST request.
             req_timeout (int): The duration controlling the request timeout.
 
         Returns:
-          result (dict[str, Any]): A dictionary is being returned with keys "code", "reason", and "data".
+            dict[str, Any]: A dictionary is being returned with keys "code", "reason", and "data".
 
         """
 
@@ -94,8 +96,10 @@ class CupApi:
         request: ClientResponse
 
         try:
+            method = method.lower()
+
             async with asyncio.timeout(req_timeout):
-                if method.lower() == "post":
+                if method == "post":
                     request = await self._session.post(url, json=data, headers=headers)
                 elif method == "put":
                     request = await self._session.put(url, json=data, headers=headers)
@@ -133,7 +137,7 @@ class CupApi:
         """Refresh image information from Cup Server.
 
         Returns:
-          result (dict[str, Any]): A dictionary with the keys "code", "reason", and "data".
+            dict[str, Any]: A dictionary with the keys "code", "reason", and "data".
 
         """
 
@@ -151,7 +155,7 @@ class CupApi:
         """Retrieve metrics from Cup Server.
 
         Returns:
-          result (dict[str, Any]): A dictionary with the keys "code", "reason", and "data".
+            dict[str, Any]: A dictionary with the keys "code", "reason", and "data".
 
         """
 
@@ -199,6 +203,9 @@ class CupApi:
         Args:
             data (dict[str, Any]): The raw payload returned by the Cup API, expected
                 to contain an ``images`` key holding a list of image objects.
+
+        Returns:
+            None.
 
         """
 
@@ -250,6 +257,9 @@ class CupApi:
           excluding images in the ``up_to_date`` and ``unknown`` categories.
 
         The result is stored in the instance attribute ``cache_metrics``.
+
+        Returns:
+            None.
 
         """
 

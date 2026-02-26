@@ -82,7 +82,17 @@ async def async_setup_entry(
     entry: CupComponentConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Set up the Cup Component sensor."""
+    """Set up Cup Component sensor entities from a config entry.
+
+    Args:
+        hass (HomeAssistant): The Home Assistant instance.
+        entry (CupComponentConfigEntry): The config entry for this integration.
+        async_add_entities (AddConfigEntryEntitiesCallback): Callback to register new entities.
+
+    Returns:
+        None.
+
+    """
     name = entry.data[CONF_NAME]
     cup_data = entry.runtime_data
     sensors = [
@@ -109,7 +119,15 @@ class CupComponentSensor(CupComponentEntity, SensorEntity):  # pyright: ignore[r
         server_unique_id: str,
         description: SensorEntityDescription,
     ) -> None:
-        """Initialize a Cup Component sensor."""
+        """Initialize a Cup Component sensor.
+
+        Args:
+            cup_component (CupComponentData): Runtime data containing the API client and coordinator.
+            name (str): The human-readable name of the Cup server.
+            server_unique_id (str): The unique identifier of the config entry.
+            description (SensorEntityDescription): The entity description for this sensor.
+
+        """
 
         api: CupApi = cup_component.api
         coordinator: DataUpdateCoordinator[None] = cup_component.coordinator
@@ -123,7 +141,12 @@ class CupComponentSensor(CupComponentEntity, SensorEntity):  # pyright: ignore[r
 
     @property
     def native_value(self) -> StateType | datetime:  # pyright: ignore[reportIncompatibleVariableOverride]
-        """Return the state of the device."""
+        """Return the state of the device.
+
+        Returns:
+            StateType | datetime: The current value of the sensor.
+
+        """
 
         possible_keys: list[str] = [
             "major_updates",
@@ -148,7 +171,12 @@ class CupComponentSensor(CupComponentEntity, SensorEntity):  # pyright: ignore[r
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:  # pyright: ignore[reportIncompatibleVariableOverride]
-        """Return the state attributes."""
+        """Return the state attributes.
+
+        Returns:
+            dict[str, Any] | None: A dictionary of extra attributes, or None if not applicable.
+
+        """
         if self.entity_description.key in self.api.cache_images:
             return {"images_list": json.dumps(self.api.cache_images[self.entity_description.key])}
 

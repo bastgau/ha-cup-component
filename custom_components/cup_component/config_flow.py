@@ -41,7 +41,15 @@ class CupComponentdFlowHandler(ConfigFlow, domain=DOMAIN):
         self._config: dict[str, str] = {}
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        """Handle a flow initiated by the user."""
+        """Handle a flow initiated by the user.
+
+        Args:
+            user_input (dict[str, Any] | None): The data submitted by the user, or None on first load.
+
+        Returns:
+            ConfigFlowResult: The result of the config flow step.
+
+        """
         errors = {}
 
         if user_input is not None:
@@ -77,10 +85,25 @@ class CupComponentdFlowHandler(ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlowHandler:  # noqa: ARG004
-        """Get the options flow for this handler."""
+        """Get the options flow for this handler.
+
+        Args:
+            config_entry (ConfigEntry): The current config entry.
+
+        Returns:
+            OptionsFlowHandler: The options flow handler instance.
+
+        """
         return OptionsFlowHandler()
 
     async def _async_try_connect(self) -> dict[str, str]:
+        """Attempt to connect to the Cup API and return any connection errors.
+
+        Returns:
+            dict[str, str]: A dictionary mapping field names to error keys, or an empty dict if successful.
+
+        """
+
         session = async_get_clientsession(self.hass, verify_ssl=False)
 
         api_client = CupApi(
@@ -109,6 +132,12 @@ class CupComponentdFlowHandler(ConfigFlow, domain=DOMAIN):
 
 
 def _get_data_option_schema() -> vol.Schema:
+    """Build and return the voluptuous schema for the options flow form.
+
+    Returns:
+        vol.Schema: The schema used to validate and display the options form.
+
+    """
     return vol.Schema(
         {
             vol.Required(
@@ -131,8 +160,17 @@ def _get_data_option_schema() -> vol.Schema:
 async def _async_validate_input(
     hass: HomeAssistant,  # noqa: ARG001 # pylint: disable=unused-argument
     user_input: dict[str, Any],
-) -> Any:
-    """..."""
+) -> dict[str, str]:
+    """Validate user input from the options flow form.
+
+    Args:
+        hass (HomeAssistant): The Home Assistant instance.
+        user_input (dict[str, Any]): The data submitted by the user in the options form.
+
+    Returns:
+        dict[str, str]: A dictionary mapping field names to error keys if validation fails, or an empty dict if valid.
+
+    """
     if user_input[CONF_UPDATE_INTERVAL] == 1:
         return {CONF_UPDATE_INTERVAL: "invalid_update_interval"}
 
@@ -143,7 +181,15 @@ class OptionsFlowHandler(OptionsFlow):
     """Options flow used to change configuration (options) of existing instance of integration."""
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        """..."""
+        """Handle the initial step of the options flow.
+
+        Args:
+            user_input (dict[str, Any] | None): The data submitted by the user, or None on first load.
+
+        Returns:
+            ConfigFlowResult: The result of the options flow step.
+
+        """
         if user_input is not None:  # we asked to validate values entered by user
             errors = await _async_validate_input(self.hass, user_input)
 
