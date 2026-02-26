@@ -108,6 +108,9 @@ class CupComponentButton(CupComponentEntity, ButtonEntity):  # pyright: ignore[r
         Returns:
             None.
 
+        Raises:
+            ActionExecutionError: If the action is unknown or if the API returns a non-200 status code.
+
         """
 
         action: str = self.entity_description.key

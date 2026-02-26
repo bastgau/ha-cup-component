@@ -249,7 +249,7 @@ def handle_status(status_code: int) -> None:
         NotFoundError: If the status code is 404.
         MethodNotAllowedError: If the status code is 405.
         TooManyRequestsError: If the status code is 429.
-        ServerErrorError: If the status code is 500.
+        ServerError: If the status code is 500.
         BadGatewayError: If the status code is 502.
         ServiceUnavailableError: If the status code is 503.
         GatewayTimeoutError: If the status code is 504.

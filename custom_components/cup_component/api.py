@@ -15,6 +15,16 @@ from .exceptions import (
     handle_status,
 )
 
+# Mapping from API version_update_type values to internal names
+_VERSION_UPDATE_TYPE_MAPPING: dict[str, str] = {
+    "major": "major_updates",
+    "minor": "minor_updates",
+    "other": "other_updates",
+    "patch": "patch_updates",
+    "unknown": "unknown",
+    "up_to_date": "up_to_date",
+}
+
 
 class CupApi:
     """Cup API Client."""
@@ -178,6 +188,9 @@ class CupApi:
         Returns:
             dict[str, Any]: A dictionary with the keys "code", "reason", and "data".
 
+        Raises:
+            ContentApiTypeError: If the 'last_updated' field is missing from the API response.
+
         """
 
         url: str = "/json"
@@ -241,15 +254,6 @@ class CupApi:
 
         """
 
-        mapping: dict[str, str] = {
-            "major": "major_updates",
-            "minor": "minor_updates",
-            "other": "other_updates",
-            "patch": "patch_updates",
-            "unknown": "unknown",
-            "up_to_date": "up_to_date",
-        }
-
         new_images: dict[str, list[Any]] = {
             "major_updates": [],
             "minor_updates": [],
@@ -270,7 +274,7 @@ class CupApi:
 
             if "version_update_type" in image["result"]["info"]:
                 key: str = image["result"]["info"]["version_update_type"]
-                new_images[mapping[key]].append(image)  # KeyError thrown later
+                new_images[_VERSION_UPDATE_TYPE_MAPPING[key]].append(image)  # KeyError thrown later
                 continue
 
             new_images["other_updates"].append(image)

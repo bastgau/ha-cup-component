@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from .api import CupApi
 
 # Keys corresponding to numeric metrics stored in cache_metrics
-METRIC_SENSOR_KEYS: tuple[str, ...] = (
+_METRIC_SENSOR_KEYS: tuple[str, ...] = (
     "major_updates",
     "minor_updates",
     "monitored_images",
@@ -159,7 +159,7 @@ class CupComponentSensor(CupComponentEntity, SensorEntity):  # pyright: ignore[r
 
         """
 
-        if self.entity_description.key in METRIC_SENSOR_KEYS:
+        if self.entity_description.key in _METRIC_SENSOR_KEYS:
             return self.api.cache_metrics.get(self.entity_description.key)
 
         if self.entity_description.key == "last_checked":

@@ -50,8 +50,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: CupComponentConfigEntry)
 
     """
 
-    name = entry.data[CONF_NAME]
-    url = entry.data[CONF_URL]
+    name = str(entry.data[CONF_NAME])
+    url = str(entry.data[CONF_URL])
 
     _LOGGER.debug("Setting up %s integration with host %s", DOMAIN, url)
 
