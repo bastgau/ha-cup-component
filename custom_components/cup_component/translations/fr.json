@@ -38,6 +38,11 @@
         }
     },
     "entity": {
+        "binary_sensor": {
+            "updates_available": {
+                "name": "Mises à jour disponibles"
+            }
+        },
         "sensor": {
             "major_updates": {
                 "name": "Images avec des mises à jour majeures",
