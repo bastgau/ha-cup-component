@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
     from . import CupComponentConfigEntry, CupComponentData
-    from .api import Api as ClientAPI
+    from .api import CupApi
 
 SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
     SensorEntityDescription(
@@ -78,7 +78,7 @@ SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
 
 
 async def async_setup_entry(
-    hass: HomeAssistant,  # noqa: ARG001 # pylint:disable=unused-argument
+    hass: HomeAssistant,  # noqa: ARG001 # pylint: disable=unused-argument
     entry: CupComponentConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
@@ -104,15 +104,15 @@ class CupComponentSensor(CupComponentEntity, SensorEntity):  # pyright: ignore[r
 
     def __init__(
         self,
-        cup_data: CupComponentData,
+        cup_component: CupComponentData,
         name: str,
         server_unique_id: str,
         description: SensorEntityDescription,
     ) -> None:
         """Initialize a Cup Component sensor."""
 
-        api: ClientAPI = cup_data.api
-        coordinator: DataUpdateCoordinator[None] = cup_data.coordinator
+        api: CupApi = cup_component.api
+        coordinator: DataUpdateCoordinator[None] = cup_component.coordinator
 
         super().__init__(api, coordinator, name, server_unique_id)
         self.entity_description = description  # pyright: ignore[reportIncompatibleVariableOverride]

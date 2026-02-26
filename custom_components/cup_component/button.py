@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
     from . import CupComponentConfigEntry, CupComponentData
-    from .api import Api as ClientApi
+    from .api import CupApi
 
 PARALLEL_UPDATES = 1
 _LOGGER = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ BUTTON_TYPES: tuple[CupComponentButtonEntityDescription, ...] = (
 
 
 async def async_setup_entry(
-    hass: HomeAssistant,  # noqa: ARG001 # pylint:disable=unused-argument
+    hass: HomeAssistant,  # noqa: ARG001 # pylint: disable=unused-argument
     entry: CupComponentConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
@@ -74,7 +74,7 @@ class CupComponentButton(CupComponentEntity, ButtonEntity):  # pyright: ignore[r
     ) -> None:
         """Initialize Cup Component button."""
 
-        api: ClientApi = cup_data.api
+        api: CupApi = cup_data.api
         coordinator: DataUpdateCoordinator[None] = cup_data.coordinator
 
         super().__init__(api, coordinator, name, server_unique_id)
@@ -104,6 +104,6 @@ class CupComponentButton(CupComponentEntity, ButtonEntity):  # pyright: ignore[r
             _LOGGER.info("Action '%s' just executed correctly for '%s'.", action, self._name)
 
         except ActionExecutionError:
-            _LOGGER.error("Unable to launch '%s' action: %s", action, result.get("data"))  # noqa: TRY400
+            _LOGGER.error("Unable to launch '%s' action: %s", action, result.get("data", {}))  # noqa: TRY400
 
         self.coordinator.async_update_listeners()

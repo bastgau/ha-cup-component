@@ -23,7 +23,6 @@ version = "0.0.0"
 "Bug Tracker" = "https://github.com/bastgau/ha-cup-component/issues"
 Changelog = "https://github.com/bastgau/ha-cup-component/releases"
 
-
 [tool.poetry.dependencies]
 homeassistant = "2026.2.1"
 python = ">=3.13,<3.14"

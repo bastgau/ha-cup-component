@@ -13,7 +13,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .api import Api as ClientAPI
+from .api import CupApi
 from .const import (
     CONF_UPDATE_INTERVAL,
     DEFAULT_NAME,
@@ -38,7 +38,7 @@ class CupComponentdFlowHandler(ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         """Initialize the config flow."""
-        self._config: dict[str, Any] = {}
+        self._config: dict[str, str] = {}
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Handle a flow initiated by the user."""
@@ -83,7 +83,7 @@ class CupComponentdFlowHandler(ConfigFlow, domain=DOMAIN):
     async def _async_try_connect(self) -> dict[str, str]:
         session = async_get_clientsession(self.hass, verify_ssl=False)
 
-        api_client = ClientAPI(
+        api_client = CupApi(
             session=session,
             url=self._config[CONF_URL],
             logger=_LOGGER,
@@ -129,7 +129,7 @@ def _get_data_option_schema() -> vol.Schema:
 
 
 async def _async_validate_input(
-    hass: HomeAssistant,  # noqa: ARG001 # pylint:disable=unused-argument
+    hass: HomeAssistant,  # noqa: ARG001 # pylint: disable=unused-argument
     user_input: dict[str, Any],
 ) -> Any:
     """..."""

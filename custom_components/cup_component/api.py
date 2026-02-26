@@ -16,7 +16,7 @@ from .exceptions import (
 )
 
 
-class Api:
+class CupApi:
     """Cup API Client."""
 
     _logger: logging.Logger | None
@@ -60,7 +60,7 @@ class Api:
 
         return self._logger
 
-    async def _call(  # pylint: disable=too-many-arguments, too-many-positional-arguments
+    async def _call(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         route: str,
         method: str,
@@ -75,7 +75,7 @@ class Api:
             method (str): Represents the HTTP method to be used. It can be one of the following: "post", "delete", or "get".
             action (str): Represents the action name requested.
             data (dict[str, Any] | None): Used to pass a dictionary containing data to be sent in the request when making a POST request.
-            req_timeout (int): Timeout in seconds
+            req_timeout (int): The duration controlling the request timeout.
 
         Returns:
           result (dict[str, Any]): A dictionary is being returned with keys "code", "reason", and "data".
@@ -94,10 +94,8 @@ class Api:
         request: ClientResponse
 
         try:
-            method = method.lower()
-
             async with asyncio.timeout(req_timeout):
-                if method == "post":
+                if method.lower() == "post":
                     request = await self._session.post(url, json=data, headers=headers)
                 elif method == "put":
                     request = await self._session.put(url, json=data, headers=headers)
@@ -141,7 +139,7 @@ class Api:
 
         url: str = "/refresh"
 
-        result: dict[str, Any] = await self._call(url, action="refresh", method="GET", req_timeout=15)
+        result: dict[str, Any] = await self._call(url, action="refresh", method="GET")
 
         return {
             "code": result["code"],

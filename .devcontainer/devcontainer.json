@@ -1,5 +1,5 @@
 {
-    "name": "HA Cup Component",
+    "name": "HA Cup Component Integration",
     "dockerFile": "./Dockerfile",
     "features": {
         "ghcr.io/devcontainers/features/github-cli:1": {
@@ -16,8 +16,12 @@
         "ghcr.io/devcontainers/features/rust:1": {}
     },
     "postCreateCommand": "scripts/setup",
+    "mounts": [
+        "type=bind,source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/home/vscode/.ssh,readonly"
+    ],
     "runArgs": [
-        "--network=host"
+        "--network=host",
+        "--env-file=${localWorkspaceFolder}/.devcontainer/.env"
     ],
     "forwardPorts": [
         8123
@@ -38,9 +42,15 @@
                 "ms-python.black-formatter",
                 "tamasfe.even-better-toml",
                 "eamodio.gitlens",
+                "mohsen1.prettify-json",
                 "ms-python.pylint"
             ],
             "settings": {
+                "files.insertFinalNewline": true,
+                "files.exclude": {
+                    ".ruff_cache": true,
+                    "**/__pycache__": true
+                },
                 "files.eol": "\n",
                 "editor.tabSize": 4,
                 "python.pythonPath": "/usr/bin/python3",

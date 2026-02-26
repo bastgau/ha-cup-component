@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import timedelta
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -17,7 +17,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .api import Api as ClientApi
+from .api import CupApi
 from .const import CONF_UPDATE_INTERVAL, DOMAIN, MIN_TIME_BETWEEN_UPDATES
 
 if TYPE_CHECKING:
@@ -35,7 +35,7 @@ type CupComponentConfigEntry = ConfigEntry[CupComponentData]
 class CupComponentData:
     """Runtime data definition."""
 
-    api: ClientApi
+    api: CupApi
     coordinator: DataUpdateCoordinator[None]
 
 
@@ -48,7 +48,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: CupComponentConfigEntry)
     _LOGGER.debug("Setting up %s integration with host %s", DOMAIN, url)
 
     session = async_get_clientsession(hass, verify_ssl=False)
-    api_client = ClientApi(
+    api_client = CupApi(
         session=session,
         url=url,
         logger=_LOGGER,
@@ -57,9 +57,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: CupComponentConfigEntry)
     async def async_update_data() -> None:
         """Fetch data from API endpoint."""
 
-        result: Any = await api_client.call_get_all_data()
-
-        if not isinstance(result, dict):
+        if not isinstance(await api_client.call_get_all_data(), dict):  # pyright: ignore[reportUnnecessaryIsInstance]
             raise ConfigEntryAuthFailed
 
     conf_update_interval: int | None = entry.data.get(CONF_UPDATE_INTERVAL)
@@ -69,7 +67,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: CupComponentConfigEntry)
     else:
         update_interval = timedelta(seconds=conf_update_interval)
 
-    coordinator = DataUpdateCoordinator(
+    coordinator: DataUpdateCoordinator[None] = DataUpdateCoordinator(
         hass,
         _LOGGER,
         config_entry=entry,
