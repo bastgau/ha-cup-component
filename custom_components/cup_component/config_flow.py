@@ -212,6 +212,9 @@ class OptionsFlowHandler(OptionsFlow):
     def _async_show_init_form(self) -> ConfigFlowResult:
         """Initialise the default update interval if missing and display the options form.
 
+        If the update interval is not yet set in the config entry data, it is initialised
+        with the default value before the form is displayed.
+
         Returns:
             ConfigFlowResult: The form result with pre-filled default values.
 
