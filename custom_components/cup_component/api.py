@@ -21,14 +21,8 @@ class CupApi:
     """Cup API Client."""
 
     _logger: Logger | None
-    _session: Any = None
+    _session: ClientSession
     _prefix: str = "/api/v3"
-
-    cache_metrics: dict[str, Any] = {}
-    cache_images: dict[str, Any] = {}
-    cache_last_checked: datetime | None = None
-
-    url: str = ""
 
     def __init__(
         self,
@@ -45,9 +39,13 @@ class CupApi:
 
         """
 
-        self.url = url
+        self.url: str = url
         self._logger = logger
         self._session = session
+
+        self.cache_metrics: dict[str, Any] = {}
+        self.cache_images: dict[str, list[Any]] = {}
+        self.cache_last_checked: datetime | None = None
 
     def _get_logger(self) -> Logger:
         """Return a logger if it exists, otherwise it creates a new logger.
