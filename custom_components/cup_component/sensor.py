@@ -36,6 +36,7 @@ _METRIC_SENSOR_KEYS: tuple[str, ...] = (
     "unknown",
     "up_to_date",
     "updates_available",
+    "excluded_images",
 )
 
 SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
@@ -84,6 +85,11 @@ SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
         translation_key="last_checked",
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    SensorEntityDescription(
+        key="excluded_images",
+        translation_key="excluded_images",
+        state_class=SensorStateClass.MEASUREMENT,
     ),
 )
 
@@ -177,5 +183,26 @@ class CupComponentSensor(CupComponentEntity, SensorEntity):  # pyright: ignore[r
         """
         if self.entity_description.key in self.api.cache_images:
             return {"images_list": self.api.cache_images[self.entity_description.key]}
+
+        if self.entity_description.key == "monitored_images":
+            # Compute the full list of monitored images on the fly (all buckets except excluded)
+            all_images = [
+                image
+                for key, images in self.api.cache_images.items()
+                if key != "excluded_images"
+                for image in images
+            ]
+            return {"images_list": all_images}
+
+        if self.entity_description.key == "updates_available":
+            # Compute the full list of images with pending updates on the fly
+            update_buckets = {"major_updates", "minor_updates", "patch_updates", "other_updates"}
+            all_updates = [
+                image
+                for key, images in self.api.cache_images.items()
+                if key in update_buckets
+                for image in images
+            ]
+            return {"images_list": all_updates}
 
         return None

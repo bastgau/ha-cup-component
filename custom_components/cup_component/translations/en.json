@@ -27,14 +27,19 @@
         "step": {
             "init": {
                 "data": {
-                    "update_interval": "Data polling frequency (seconds)"
+                    "update_interval": "Data polling frequency (seconds)",
+                    "exclude_patterns": "Images to exclude"
+                },
+                "data_description": {
+                    "exclude_patterns": "List of image names or regex patterns to exclude from metrics (e.g. nginx:latest, ^myapp.*)"
                 },
                 "description": "After modifying one of these options, it is necessary to reload the service or restart Home Assistant.",
                 "title": "HA Cup Component"
             }
         },
         "error": {
-            "invalid_update_interval": "Invalid data polling frequency. Must be higher than 1 second and lower than 3600 seconds."
+            "invalid_update_interval": "Invalid data polling frequency. Must be higher than 1 second and lower than 3600 seconds.",
+            "duplicate_exclude_pattern": "Duplicate patterns are not allowed."
         }
     },
     "entity": {
@@ -118,6 +123,15 @@
             },
             "last_checked": {
                 "name": "Last checked"
+            },
+            "excluded_images": {
+                "name": "Excluded images",
+                "unit_of_measurement": "images",
+                "state_attributes": {
+                    "images_list": {
+                        "name": "Image list"
+                    }
+                }
             }
         },
         "button": {

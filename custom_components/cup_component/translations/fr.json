@@ -27,14 +27,19 @@
         "step": {
             "init": {
                 "data": {
-                    "update_interval": "Fréquence d'interrogation des données (secondes)"
+                    "update_interval": "Fréquence d'interrogation des données (secondes)",
+                    "exclude_patterns": "Images à exclure"
+                },
+                "data_description": {
+                    "exclude_patterns": "Liste de noms d'images ou de regex à exclure des métriques (ex : nginx:latest, ^myapp.*)"
                 },
                 "description": "Après avoir modifié une de ces options, il est nécessaire de recharger le service ou de redémarrer Home Assistant.",
                 "title": "HA Cup Component"
             }
         },
         "error": {
-            "invalid_update_interval": "Fréquence d'interrogation des données invalide. Doit être supérieure à 1 seconde et inférieure à 3600 secondes."
+            "invalid_update_interval": "Fréquence d'interrogation des données invalide. Doit être supérieure à 1 seconde et inférieure à 3600 secondes.",
+            "duplicate_exclude_pattern": "Les patterns en double ne sont pas autorisés."
         }
     },
     "entity": {
@@ -118,6 +123,15 @@
             },
             "last_checked": {
                 "name": "Dernière vérification"
+            },
+            "excluded_images": {
+                "name": "Images exclues",
+                "unit_of_measurement": "images",
+                "state_attributes": {
+                    "images_list": {
+                        "name": "Liste des images"
+                    }
+                }
             }
         },
         "button": {

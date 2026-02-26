@@ -17,7 +17,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .api import CupApi
-from .const import CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL, DOMAIN
+from .const import CONF_EXCLUDE_PATTERNS, CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL, DOMAIN
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -56,10 +56,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: CupComponentConfigEntry)
     _LOGGER.debug("Setting up %s integration with host %s", DOMAIN, url)
 
     session = async_get_clientsession(hass, verify_ssl=False)
+    exclude_patterns: list[str] = entry.data.get(CONF_EXCLUDE_PATTERNS, [])
+
     api_client = CupApi(
         session=session,
         url=url,
         logger=_LOGGER,
+        exclude_patterns=exclude_patterns,
     )
 
     async def async_update_data() -> None:
