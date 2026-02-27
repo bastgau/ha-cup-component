@@ -13,6 +13,7 @@
   "loggers": [
     "cup_component"
   ],
+  "frontend_extra_module_url": "/local/custom_components/cup_component/cup-images-card.js",
   "requirements": [],
-  "version": "1.1.0"
+  "version": "0.0.0"
 }
