@@ -1,0 +1,158 @@
+# Cup Images Card — Developer Convention
+
+## Overview
+
+This file documents conventions for working on the `cup-images-card.js` custom Lovelace card
+for the Home Assistant `cup_component` integration.
+
+---
+
+## File
+
+```
+custom_components/cup_component/www/cup-images-card.js
+```
+
+Home Assistant serves this file via a symlink. After every modification, a **hard refresh**
+(`Ctrl+Shift+R`) is required in the browser to bypass the JS cache.
+
+To verify the active version served by HA:
+
+```javascript
+fetch('/local/custom_components/cup_component/cup-images-card.js?v='+Date.now())
+.then(r=>r.text())
+.then(t=>console.log(t.match(/const CARD_VERSION = "(\w+)"/)?.[1]))
+```
+
+---
+
+## Versioning
+
+Versions are named after **French cities**, in chronological order of sessions.  
+Always bump `CARD_VERSION` at the end of each working session.
+
+```javascript
+const CARD_VERSION = "Le Mans"; // current
+```
+
+---
+
+## Architecture
+
+### Editor (`CupImagesCardEditor`)
+
+Registered **before** `CupImagesCard` (required by HA).
+
+Uses a **build-once pattern** to avoid DOM rebuild on every config change:
+
+| Method | Role |
+|---|---|
+| `_buildDOM()` | Called once — builds static HTML structure, assigns selector schemas, calls `_updateValues()` and `_attachListeners()` |
+| `_updateValues()` | Called on every config change — patches dynamic values without rebuilding DOM |
+| `_attachListeners()` | Called once — attaches all event listeners using delegation where possible |
+
+**Key rule:** HA passes a frozen config object to `setConfig()`. Always shallow-copy it:
+```javascript
+this._config = { ...config };
+```
+
+**Title field:** dispatches config directly via `_fireConfig()` (no `_updateValues()` call) to preserve input focus.
+
+### Card (`CupImagesCard`)
+
+Uses an **incremental render pattern**:
+
+| Phase | Trigger | Action |
+|---|---|---|
+| First render | `_initialized === false` | Full `shadowRoot.innerHTML` rebuild |
+| Subsequent renders | `_initialized === true` | Patch only changed DOM nodes |
+
+Device entities are resolved once and cached in `_deviceEntities` until `setConfig()` is called again.
+
+---
+
+## Config Keys
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `device_id` | `string` | — | **Required.** Device ID from the `cup_component` integration |
+| `title` | `string` | — | Card title. Omit to hide the header entirely |
+| `hero_style` | `"badges"` \| `"classic"` | `"badges"` | Hero block display style |
+| `collapsed` | `"always"` \| `"never"` \| `"if_empty"` | `"if_empty"` | Default collapse behaviour for sections |
+| `hide_hero` | `boolean` | `false` | Hide the hero metrics block |
+| `hide_footer` | `boolean` | `false` | Hide the last checked footer |
+| `hide_sections` | `string[]` | `[]` | Section keys to hide |
+| `order_sections` | `string[]` | — | Section keys defining display order |
+| `_preview` | `boolean` | — | Internal stub flag for card picker preview. Never persisted |
+
+---
+
+## Section Keys
+
+```
+major_updates, minor_updates, patch_updates, other_updates,
+up_to_date, unknown, excluded_images
+```
+
+The special key `divider` can be used in `order_sections` to insert a visual separator.
+
+---
+
+## Hero Styles
+
+### `badges` (default)
+Logo on the left, two pill badges centered:
+- Blue badge: Docker icon + monitored image count
+- Green/Red badge: status icon + update count or "Up to date"
+
+### `classic`
+Logo + large green number (monitored images) + smaller update count line below.
+
+---
+
+## Labels
+
+All user-facing strings are centralised in the `LABELS` constant.  
+**Never hardcode strings** in HTML templates or JS logic.  
+This makes future internationalisation straightforward: only `LABELS` needs to be updated.
+
+```javascript
+const LABELS = {
+  // Card — hero
+  monitoredSingular, monitoredPlural,
+  upToDateSingular, upToDatePlural,
+  availableSingular, availablePlural,
+  upToDate,
+  // Card — sections
+  noImages, imageUnknown, lastCheckedUnknown,
+  // Editor
+  editorCollapsedBehaviour, editorHeroStyle,
+  editorHideSections, editorHideHeroBlock, editorHideFooter,
+  editorSectionOrder, editorAddButton,
+};
+```
+
+---
+
+## Editor Checkboxes — Important Rule
+
+The `#hide-hero-cb` and `#hide-footer-cb` checkboxes do **not** have a `data-key` attribute.  
+The section keys checkboxes **do** have `data-key`.
+
+Always scope selectors accordingly to avoid cross-contamination:
+
+```javascript
+// Correct — targets section keys only
+root.querySelectorAll("input[type=checkbox][data-key]")
+
+// Wrong — also matches hide-hero-cb and hide-footer-cb
+root.querySelectorAll(".checkbox-row input")
+```
+
+---
+
+## Local Filesystem Access
+
+Always use `docker_filesystem` tools to read/write this file. Never use `bash_tool`.
+
+Allowed directory: `/workspaces/ha-cup-component/custom_components`
