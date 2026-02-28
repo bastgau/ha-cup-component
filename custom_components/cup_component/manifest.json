@@ -4,10 +4,10 @@
   "codeowners": [
     "@bastgau"
   ],
-  "config_flow": true,
   "after_dependencies": [
     "lovelace"
   ],
+  "config_flow": true,
   "dependencies": [
     "frontend",
     "http"
