@@ -38,7 +38,7 @@
             }
         },
         "error": {
-            "invalid_update_interval": "Invalid data polling frequency. Must be higher than 1 second and lower than 3600 seconds.",
+            "invalid_update_interval": "Invalid data polling frequency. Must be higher than 15 second and lower than 3600 seconds.",
             "duplicate_exclude_pattern": "Duplicate patterns are not allowed."
         }
     },
