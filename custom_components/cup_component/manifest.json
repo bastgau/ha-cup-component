@@ -1,11 +1,11 @@
 {
   "domain": "cup_component",
   "name": "HA Cup Component",
-  "codeowners": [
-    "@bastgau"
-  ],
   "after_dependencies": [
     "lovelace"
+  ],
+  "codeowners": [
+    "@bastgau"
   ],
   "config_flow": true,
   "dependencies": [
