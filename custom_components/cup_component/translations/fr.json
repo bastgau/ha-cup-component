@@ -38,7 +38,7 @@
             }
         },
         "error": {
-            "invalid_update_interval": "Fréquence d'interrogation des données invalide. Doit être supérieure à 1 seconde et inférieure à 3600 secondes.",
+            "invalid_update_interval": "Fréquence d'interrogation des données invalide. Doit être supérieure à 15 seconde et inférieure à 3600 secondes.",
             "duplicate_exclude_pattern": "Les patterns en double ne sont pas autorisés."
         }
     },
