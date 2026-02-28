@@ -11,8 +11,10 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_NAME,
     CONF_URL,
+    EVENT_HOMEASSISTANT_STARTED,
     Platform,
 )
+from homeassistant.core import CoreState, Event
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
@@ -22,6 +24,7 @@ from .frontend import JSModuleRegistration
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
+    from homeassistant.helpers.typing import ConfigType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -31,29 +34,52 @@ PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.BUTTON]
 type CupComponentConfigEntry = ConfigEntry[CupComponentData]
 
 
-async def async_setup(hass: HomeAssistant, config: dict) -> bool:  # noqa: ARG001
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:  # pyright: ignore[reportUnknownParameterType, reportMissingTypeArgument] # pylint: disable=unused-argument  # noqa: ARG001
     """Register the static HTTP path and the Lovelace card resource.
 
     This function is called once when the integration is loaded, before any
-    config entry setup. It delegates path and resource registration to
-    JSModuleRegistration.
+    config entry setup. Registration is deferred until HA is fully started
+    to ensure hass.data[LOVELACE_DATA] is available.
 
     Args:
         hass (HomeAssistant): The Home Assistant instance.
-        config (dict): The full HA configuration (unused).
+        config (ConfigType): The full HA configuration (unused).
 
     Returns:
         bool: Always True.
 
     """
-    registrar = JSModuleRegistration(hass)
-    await registrar.async_register()
+
+    async def _register_frontend(_event: Event | None = None) -> None:
+        """Register frontend resources once HA is running.
+
+        Returns:
+            None.
+
+        """
+        registrar = JSModuleRegistration(hass)
+        await registrar.async_register()
+
+    if hass.state == CoreState.running:
+        # HA is already running (e.g. integration reloaded at runtime): register immediately
+        # without waiting for EVENT_HOMEASSISTANT_STARTED, which will never fire again.
+        await _register_frontend()
+    else:
+        # Defer until HA has fully started to ensure hass.data[LOVELACE_DATA] is available.
+        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _register_frontend)
+
     return True
 
 
 @dataclass
 class CupComponentData:
-    """Runtime data definition."""
+    """Holds runtime data for the cup_component integration.
+
+    Attributes:
+        api (CupApi): The API client used to fetch data from the Cup server.
+        coordinator (DataUpdateCoordinator[None]): The update coordinator managing polling.
+
+    """
 
     api: CupApi
     coordinator: DataUpdateCoordinator[None]
@@ -130,3 +156,23 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     """
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:  # noqa: ARG001 # pylint: disable=unused-argument
+    """Remove Cup Component entry and clean up Lovelace resources.
+
+    Called when the integration is permanently removed by the user.
+    Unregisters the Lovelace card resource from storage.
+
+    Args:
+        hass (HomeAssistant): The Home Assistant instance.
+        entry (ConfigEntry): The config entry being removed (unused).
+
+    Returns:
+        None.
+
+    """
+    registrar = JSModuleRegistration(hass)
+    await registrar.async_unregister()
+    # Note: the static HTTP path (URL_BASE) cannot be deregistered at runtime —
+    # HA provides no public API for this. It remains active until the next HA restart.

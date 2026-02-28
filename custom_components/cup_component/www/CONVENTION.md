@@ -164,22 +164,42 @@ Two complementary mechanisms are used:
 | `frontend_extra_module_url` in `manifest.json` | Loads the JS globally at frontend boot — defines the custom element in the browser |
 | `JSModuleRegistration` in `frontend/__init__.py` | Registers the resource in Lovelace (storage mode) — makes the card available in the card picker |
 
+> **YAML mode:** If Lovelace is configured in YAML mode, automatic resource registration is skipped. The resource must be declared manually in the YAML configuration.
+
 ### Static HTTP route
 
-Registered in `async_setup` via `JSModuleRegistration._async_register_path()`:
+Registered once per HA session in `async_setup` via `JSModuleRegistration._async_register_path()`:
 
 ```
 URL:    /cup_component/cup-images-card.js
 Serves: custom_components/cup_component/www/cup-images-card.js
 ```
 
+> **Note:** The static HTTP path cannot be deregistered at runtime — HA provides no public API for this. After a complete removal of the integration, the path remains active until the next HA restart.
+
+### Versioning
+
+The Lovelace resource URL is versioned using `INTEGRATION_VERSION` from `const.py`, which is read from `manifest.json` at module load time:
+
+```
+/cup_component/cup-images-card.js?v=1.2.3
+```
+
+If the version changes between HA restarts, `JSModuleRegistration` automatically updates the resource URL in Lovelace storage.
+
+In dev environments, if `manifest.json` has no version field, `INTEGRATION_VERSION` falls back to a Unix timestamp — this guarantees the resource is always refreshed on every restart.
+
+### Uninstallation
+
+When the integration is permanently removed, `async_remove_entry` calls `JSModuleRegistration.async_unregister()` to delete the Lovelace resource from storage. The static HTTP path is not removed (see note above).
+
 ### Integration files involved
 
 ```
 custom_components/cup_component/
 ├── manifest.json              # frontend_extra_module_url + dependencies (frontend, http)
-├── __init__.py                # async_setup() calls JSModuleRegistration
-├── const.py                   # URL_BASE, LOVELACE_CARD_JS constants
+├── __init__.py                # async_setup() → JSModuleRegistration, async_remove_entry() → async_unregister()
+├── const.py                   # URL_BASE, LOVELACE_CARD_JS, LOVELACE_CARD_NAME, LOVELACE_MODULE_URL, INTEGRATION_VERSION
 ├── frontend/
 │   └── __init__.py            # JSModuleRegistration class
 └── www/

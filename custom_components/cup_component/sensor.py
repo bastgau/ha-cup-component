@@ -121,7 +121,7 @@ async def async_setup_entry(
         )
         for description in SENSOR_TYPES
     ]
-    async_add_entities(sensors, update_before_add=True)
+    async_add_entities(sensors, update_before_add=False)
 
 
 class CupComponentSensor(CupComponentEntity, SensorEntity):  # pyright: ignore[reportIncompatibleVariableOverride]
