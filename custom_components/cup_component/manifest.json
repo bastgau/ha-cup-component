@@ -5,6 +5,9 @@
     "@bastgau"
   ],
   "config_flow": true,
+  "after_dependencies": [
+    "lovelace"
+  ],
   "dependencies": [
     "frontend",
     "http"
