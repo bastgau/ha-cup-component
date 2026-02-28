@@ -13,13 +13,13 @@ for the Home Assistant `cup_component` integration.
 custom_components/cup_component/www/cup-images-card.js
 ```
 
-Home Assistant serves this file via a symlink. After every modification, a **hard refresh**
-(`Ctrl+Shift+R`) is required in the browser to bypass the JS cache.
+Home Assistant serves this file via a registered static HTTP route (see [Deployment](#deployment)).
+After every modification, a **hard refresh** (`Ctrl+Shift+R`) is required in the browser to bypass the JS cache.
 
 To verify the active version served by HA:
 
 ```javascript
-fetch('/local/custom_components/cup_component/cup-images-card.js?v='+Date.now())
+fetch('/cup_component/cup-images-card.js?v='+Date.now())
 .then(r=>r.text())
 .then(t=>console.log(t.match(/const CARD_VERSION = "(\w+)"/)?.[1]))
 ```
@@ -147,6 +147,52 @@ root.querySelectorAll("input[type=checkbox][data-key]")
 
 // Wrong — also matches hide-hero-cb and hide-footer-cb
 root.querySelectorAll(".checkbox-row input")
+```
+
+---
+
+## Deployment
+
+The card is automatically deployed when the integration is installed. No manual resource setup is required.
+
+### How it works
+
+Two complementary mechanisms are used:
+
+| Mechanism | Role |
+|---|---|
+| `frontend_extra_module_url` in `manifest.json` | Loads the JS globally at frontend boot — defines the custom element in the browser |
+| `JSModuleRegistration` in `frontend/__init__.py` | Registers the resource in Lovelace (storage mode) — makes the card available in the card picker |
+
+### Static HTTP route
+
+Registered in `async_setup` via `JSModuleRegistration._async_register_path()`:
+
+```
+URL:    /cup_component/cup-images-card.js
+Serves: custom_components/cup_component/www/cup-images-card.js
+```
+
+### Integration files involved
+
+```
+custom_components/cup_component/
+├── manifest.json              # frontend_extra_module_url + dependencies (frontend, http)
+├── __init__.py                # async_setup() calls JSModuleRegistration
+├── const.py                   # URL_BASE, LOVELACE_CARD_JS constants
+├── frontend/
+│   └── __init__.py            # JSModuleRegistration class
+└── www/
+    └── cup-images-card.js     # The card JS file
+```
+
+### `manifest.json` requirements
+
+```json
+{
+  "dependencies": ["frontend", "http"],
+  "frontend_extra_module_url": "/cup_component/cup-images-card.js"
+}
 ```
 
 ---

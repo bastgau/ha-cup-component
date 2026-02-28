@@ -3,6 +3,10 @@
 from datetime import timedelta
 
 DOMAIN = "cup_component"
+
+# URL path used to serve the Lovelace card JS file via a registered static HTTP route.
+URL_BASE = "/cup_component"
+LOVELACE_CARD_JS = "cup-images-card.js"
 DEFAULT_NAME = "Cup server name"
 DEFAULT_URL = "http://<YOUR_IP>:8000"
 

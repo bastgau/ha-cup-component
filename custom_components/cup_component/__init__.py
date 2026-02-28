@@ -18,6 +18,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .api import CupApi
 from .const import CONF_EXCLUDE_PATTERNS, CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL, DOMAIN
+from .frontend import JSModuleRegistration
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -28,6 +29,26 @@ _LOGGER = logging.getLogger(__name__)
 PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.BUTTON]
 
 type CupComponentConfigEntry = ConfigEntry[CupComponentData]
+
+
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:  # noqa: ARG001
+    """Register the static HTTP path and the Lovelace card resource.
+
+    This function is called once when the integration is loaded, before any
+    config entry setup. It delegates path and resource registration to
+    JSModuleRegistration.
+
+    Args:
+        hass (HomeAssistant): The Home Assistant instance.
+        config (dict): The full HA configuration (unused).
+
+    Returns:
+        bool: Always True.
+
+    """
+    registrar = JSModuleRegistration(hass)
+    await registrar.async_register()
+    return True
 
 
 @dataclass

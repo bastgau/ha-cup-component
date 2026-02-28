@@ -5,7 +5,10 @@
     "@bastgau"
   ],
   "config_flow": true,
-  "dependencies": [],
+  "dependencies": [
+    "frontend",
+    "http"
+  ],
   "documentation": "https://github.com/bastgau/ha-cup-component",
   "integration_type": "service",
   "iot_class": "local_polling",
@@ -13,7 +16,7 @@
   "loggers": [
     "cup_component"
   ],
-  "frontend_extra_module_url": "/local/custom_components/cup_component/cup-images-card.js",
+  "frontend_extra_module_url": "/cup_component/cup-images-card.js",
   "requirements": [],
   "version": "0.0.0"
 }
