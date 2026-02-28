@@ -9,7 +9,7 @@ import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.const import CONF_NAME, CONF_URL
-from homeassistant.core import callback
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -31,6 +31,42 @@ from .exceptions import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+
+async def async_try_connect(hass: HomeAssistant, config: dict[str, Any]) -> dict[str, str]:
+    """Attempt to connect to the Cup API and return any connection errors.
+
+    Returns:
+        dict[str, str]: A dictionary mapping field names to error keys, or an empty dict if successful.
+
+    """
+
+    session = async_get_clientsession(hass, verify_ssl=False)
+
+    api_client = CupApi(
+        session=session,
+        url=config[CONF_URL],
+        logger=_LOGGER,
+    )
+
+    try:
+        await api_client.call_get_all_data()
+    except ClientConnectorError as err:
+        _LOGGER.debug("Connection failed: %s", err)
+        return {CONF_URL: "cannot_connect"}
+    except (
+        NotFoundError,
+        ContentApiTypeError,
+        MethodNotAllowedError,
+    ) as err:
+        _LOGGER.debug("Connection failed: %s", err)
+        return {CONF_URL: "invalid_path"}
+    # broad-exception-caught: Intentional: all unexpected errors are caught here to return a user-friendly error in the config flow UI
+    except Exception:  # pylint: disable=broad-exception-caught # ai: ignore
+        _LOGGER.exception("Unexpected exception during connection attempt to %s", config[CONF_URL])
+        return {CONF_URL: "unknown_error"}
+
+    return {}
 
 
 class CupComponentFlowHandler(ConfigFlow, domain=DOMAIN):
@@ -63,7 +99,7 @@ class CupComponentFlowHandler(ConfigFlow, domain=DOMAIN):
             await self.async_set_unique_id(user_input[CONF_URL].lower())
             self._abort_if_unique_id_configured()
 
-            if not (errors := await self._async_try_connect()):
+            if not (errors := await async_try_connect(self.hass, self._config)):
                 return self.async_create_entry(title=user_input[CONF_NAME], data=self._config)
 
         raw_user_input: dict[str, Any] = user_input or {}
@@ -98,41 +134,6 @@ class CupComponentFlowHandler(ConfigFlow, domain=DOMAIN):
         """
         return OptionsFlowHandler()
 
-    async def _async_try_connect(self) -> dict[str, str]:
-        """Attempt to connect to the Cup API and return any connection errors.
-
-        Returns:
-            dict[str, str]: A dictionary mapping field names to error keys, or an empty dict if successful.
-
-        """
-
-        session = async_get_clientsession(self.hass, verify_ssl=False)
-
-        api_client = CupApi(
-            session=session,
-            url=self._config[CONF_URL],
-            logger=_LOGGER,
-        )
-
-        try:
-            await api_client.call_get_all_data()
-        except ClientConnectorError as err:
-            _LOGGER.debug("Connection failed: %s", err)
-            return {CONF_URL: "cannot_connect"}
-        except (
-            NotFoundError,
-            ContentApiTypeError,
-            MethodNotAllowedError,
-        ) as err:
-            _LOGGER.debug("Connection failed: %s", err)
-            return {CONF_URL: "invalid_path"}
-        # broad-exception-caught: Intentional: all unexpected errors are caught here to return a user-friendly error in the config flow UI
-        except Exception:  # pylint: disable=broad-exception-caught # ai: ignore
-            _LOGGER.exception("Unexpected exception during connection attempt to %s", self._config[CONF_URL])
-            return {CONF_URL: "unknown_error"}
-
-        return {}
-
 
 def _get_data_option_schema() -> vol.Schema:
     """Build and return the voluptuous schema for the options flow form.
@@ -143,6 +144,9 @@ def _get_data_option_schema() -> vol.Schema:
     """
     return vol.Schema(
         {
+            vol.Required(
+                CONF_URL,
+            ): str,
             vol.Required(
                 CONF_UPDATE_INTERVAL,
             ): vol.All(
@@ -206,6 +210,13 @@ class OptionsFlowHandler(OptionsFlow):
         if user_input is not None:  # we asked to validate values entered by user
             errors = await _async_validate_input(user_input)
 
+            if len(errors) == 0:
+                config = {
+                    CONF_URL: user_input.get(CONF_URL),
+                }
+
+                errors = await async_try_connect(self.hass, config)
+
             if not errors:
                 self.hass.config_entries.async_update_entry(
                     self.config_entry, data={**self.config_entry.data, **user_input}
@@ -233,6 +244,7 @@ class OptionsFlowHandler(OptionsFlow):
             ConfigFlowResult: The form result with pre-filled default values.
 
         """
+
         update_interval = self.config_entry.data.get(CONF_UPDATE_INTERVAL, None)
 
         if update_interval is None:

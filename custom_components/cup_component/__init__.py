@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import timedelta
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Final
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 # This integration is configured exclusively via config entries (no YAML configuration).
-CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+CONFIG_SCHEMA: Final[Any] = cv.config_entry_only_config_schema(DOMAIN)  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
 
 PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.BUTTON]
 

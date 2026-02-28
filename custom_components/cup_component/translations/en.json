@@ -6,7 +6,8 @@
         "error": {
             "incorrect_data_expected": "Failed to retrieve the data in the correct structure.",
             "cannot_connect": "Failed to connect to the server. Ensure that the server address and the port are correct.",
-            "invalid_path": "Invalid API path specified. Please verify the endpoint URL."
+            "invalid_path": "Invalid API path specified. Please verify the endpoint URL.",
+            "unknown_error": "Unknown error. Please check the logs."
         },
         "step": {
             "user": {
@@ -39,7 +40,11 @@
         },
         "error": {
             "invalid_update_interval": "Invalid data polling frequency. Must be higher than 15 second and lower than 3600 seconds.",
-            "duplicate_exclude_pattern": "Duplicate patterns are not allowed."
+            "duplicate_exclude_pattern": "Duplicate patterns are not allowed.",
+            "incorrect_data_expected": "Failed to retrieve the data in the correct structure.",
+            "cannot_connect": "Failed to connect to the server. Ensure that the server address and the port are correct.",
+            "invalid_path": "Invalid API path specified. Please verify the endpoint URL.",
+            "unknown_error": "Unknown error. Please check the logs."
         }
     },
     "entity": {
