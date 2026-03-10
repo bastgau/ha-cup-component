@@ -6,7 +6,8 @@
         "error": {
             "incorrect_data_expected": "Échec de la récupération des données dans la structure correcte.",
             "cannot_connect": "Échec de la connexion au serveur. Assurez-vous que l'adresse du serveur et le port sont corrects.",
-            "invalid_path": "Chemin d'API incorrect spécifié. Veuillez vérifier l'URL de l'endpoint."
+            "invalid_path": "Chemin d'API incorrect spécifié. Veuillez vérifier l'URL de l'endpoint.",
+            "unknown_error": "Erreur inconnue. Merci de vérifier les logs."
         },
         "step": {
             "user": {
@@ -39,7 +40,11 @@
         },
         "error": {
             "invalid_update_interval": "Fréquence d'interrogation des données invalide. Doit être supérieure à 15 seconde et inférieure à 3600 secondes.",
-            "duplicate_exclude_pattern": "Les patterns en double ne sont pas autorisés."
+            "duplicate_exclude_pattern": "Les patterns en double ne sont pas autorisés.",
+            "incorrect_data_expected": "Échec de la récupération des données dans la structure correcte.",
+            "cannot_connect": "Échec de la connexion au serveur. Assurez-vous que l'adresse du serveur et le port sont corrects.",
+            "invalid_path": "Chemin d'API incorrect spécifié. Veuillez vérifier l'URL de l'endpoint.",
+            "unknown_error": "Erreur inconnue. Merci de vérifier les logs."
         }
     },
     "entity": {
