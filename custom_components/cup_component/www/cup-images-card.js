@@ -18,10 +18,17 @@
  */
 
 // ─── Static labels & assets ────────────────────────────────────────────────
-const CARD_LOGO_URL = "https://brands.home-assistant.io/_/cup_component/dark_icon@2x.png";
-const CARD_DESCRIPTION = "Displays all monitored Docker images grouped by update type.";
+
 const INTEGRATION_DOMAIN = "cup_component";
-const CARD_VERSION = "Nantes";
+const CARD_DESCRIPTION = "Displays all monitored Docker images grouped by update type.";
+const CARD_VERSION = "XXXX";
+
+// Brand image URL — resolved at runtime depending on HA version:
+//   HA >= 2026.3: served via local brands API, theme-aware (icon vs dark_icon).
+//   HA <  2026.3: fallback to the public brands CDN (dark_icon@2x only).
+
+const CARD_LOGO_CDN_URL = `https://brands.home-assistant.io/_/${INTEGRATION_DOMAIN}/icon.png`;
+const CARD_LOGO_API_URL = `/api/brands/integration/${INTEGRATION_DOMAIN}/icon.png`;
 
 const LABELS = {
   // Card — hero
@@ -467,6 +474,7 @@ class CupImagesCard extends HTMLElement {
     super();
     this._deviceEntities = null;
     this._initialized = false;
+    this._logoUrl = ""; // resolved asynchronously before first render
     this.attachShadow({ mode: "open" });
 
     // Single persistent click listener — toggle section visibility directly in DOM
@@ -500,7 +508,15 @@ class CupImagesCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
-    this._render();
+    // Resolve logo URL once, then render. Subsequent calls render immediately.
+    if (!this._logoResolved) {
+      this._logoResolved = true;
+      this._resolveLogoUrl().then(() => this._render());
+      return; // don't render yet — logo URL not ready
+    } else {
+      if (!this._logoUrl) return;
+      this._render();
+    }
   }
 
   getCardSize() { return 3; }
@@ -519,6 +535,31 @@ class CupImagesCard extends HTMLElement {
       _preview: true,
       ...CONFIG_DEFAULTS.preview,
     };
+  }
+
+  // ─── Logo resolution ─────────────────────────────────────────────────────────
+
+  /**
+   * Resolve the logo URL depending on HA version.
+   * HA >= 2026.3: fetch a short-lived access token via WebSocket and build
+   *               a local brands API URL (theme-aware, served locally).
+   * HA <  2026.3: fall back to the public brands CDN URL synchronously.
+   */
+  async _resolveLogoUrl() {
+    const version = this._hass?.config?.version ?? "";
+    const [major, minor] = version.split(".").map(Number);
+    const supportsLocalBrands = major > 2026 || (major === 2026 && minor >= 3);
+
+    if (!supportsLocalBrands) {
+      this._logoUrl = CARD_LOGO_CDN_URL;
+      return;
+    }
+
+    const result = await this._hass.connection.sendMessagePromise({ type: "brands/access_token" });
+    if (result.token) {
+      this._logoUrl = `${CARD_LOGO_API_URL}?token=${result.token}`;
+    }
+
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -617,7 +658,7 @@ class CupImagesCard extends HTMLElement {
    */
   _renderHeroBadges(metrics) {
     return `
-      <img src="${CARD_LOGO_URL}" alt="cup">
+      <img src="${this._logoUrl}" alt="Logo Cup Component">
       <div class="hero-badge-wrapper">
         <span class="hero-badge monitored">
           <ha-icon icon="mdi:docker"></ha-icon>
@@ -640,7 +681,7 @@ class CupImagesCard extends HTMLElement {
   _renderHeroClassic(metrics) {
     return `
       <div class="hero-counter">
-        <img src="${CARD_LOGO_URL}" alt="cup">
+        <img src="${this._logoUrl}" alt="Logo Cup Component">
         <div class="hero-stats">
           <span class="hero-number">${metrics.monitored_images}<span class="hero-label">&nbsp;&nbsp;${metrics.monitored_images > 1 ? LABELS.upToDatePlural : LABELS.upToDateSingular}</span></span>
           <span class="hero-updates ${metrics.updates_available > 0 ? "has-updates" : ""}">
