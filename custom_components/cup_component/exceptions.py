@@ -1,4 +1,4 @@
-"""The above classes represent the specific exceptions raised during the API calls."""
+"""Custom exceptions raised during API calls in the Cup Component integration."""
 
 
 class ActionExecutionError(Exception):

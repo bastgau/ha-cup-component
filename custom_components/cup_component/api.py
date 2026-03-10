@@ -38,6 +38,7 @@ class CupApi:
         session: ClientSession,
         url: str,
         logger: logging.Logger | None = None,
+        exclude_patterns: list[str] | None = None,
     ) -> None:
         """Initialize Cup API Client object with an API URL and an optional logger.
 
@@ -45,12 +46,15 @@ class CupApi:
             session (ClientSession): The aiohttp client session used to perform HTTP requests.
             url (str): Represents the URL of API endpoint.
             logger (logging.Logger | None): Expects an object of type `logging.Logger` or `None` which will be used to display debug message.
+            exclude_patterns (list[str] | None): Optional list of exact names or regex patterns to exclude images from metrics.
 
         """
 
         self.url: str = url
         self._logger = logger
         self._session = session
+        # Deduplicate patterns while preserving order
+        self._exclude_patterns: list[str] = list(dict.fromkeys(exclude_patterns or []))
 
         self.cache_metrics: dict[str, Any] = {}
         self.cache_images: dict[str, list[Any]] = {}
@@ -223,6 +227,30 @@ class CupApi:
             "data": result["data"],
         }
 
+    def _is_image_excluded(self, image_name: str) -> bool:
+        """Check whether an image name matches any of the configured exclusion patterns.
+
+        Each pattern is first tried as a regex. If the pattern is not a valid
+        regex, it is compared as a plain string.
+
+        Args:
+            image_name (str): The full image name including tag (e.g. ``nginx:latest``).
+
+        Returns:
+            bool: True if the image should be excluded, False otherwise.
+
+        """
+
+        for pattern in self._exclude_patterns:
+            try:
+                if re.fullmatch(pattern, image_name):
+                    return True
+            except re.error:
+                # Invalid regex pattern: log a warning and skip it
+                self._get_logger().warning("Invalid regex pattern '%s', ignoring it.", pattern)
+
+        return False
+
     def _clean_url(self, url: str) -> str:
         """Remove extra slashes in a URL while ignoring those immediately following "://".
 
@@ -261,9 +289,17 @@ class CupApi:
             "patch_updates": [],
             "unknown": [],
             "up_to_date": [],
+            "excluded_images": [],
         }
 
         for image in data["images"]:
+            # Skip images matching any exclusion pattern
+            image_name: str = image.get("reference", "")
+            if self._is_image_excluded(image_name):
+                self._get_logger().debug("Image '%s' excluded from metrics.", image_name)
+                new_images["excluded_images"].append(image)
+                continue
+
             if image["result"]["has_update"] is None:
                 new_images["unknown"].append(image)
                 continue
@@ -306,12 +342,16 @@ class CupApi:
             "patch_updates": 0,
             "unknown": 0,
             "up_to_date": 0,
+            "excluded_images": 0,
         }
 
         for version_update_type, images in self.cache_images.items():
-            new_metrics[version_update_type] = len(images)
+            if version_update_type == "excluded_images":
+                new_metrics["excluded_images"] = len(images)
+            else:
+                new_metrics[version_update_type] = len(images)
 
-        new_metrics["monitored_images"] = sum(new_metrics.values())
+        new_metrics["monitored_images"] = sum(v for k, v in new_metrics.items() if k != "excluded_images")
 
         new_metrics["updates_available"] = (
             new_metrics["monitored_images"] - new_metrics["up_to_date"] - new_metrics["unknown"]

@@ -15,6 +15,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import CupApi
 from .const import (
+    CONF_EXCLUDE_PATTERNS,
     CONF_UPDATE_INTERVAL,
     DEFAULT_NAME,
     DEFAULT_UPDATE_INTERVAL,
@@ -155,6 +156,13 @@ def _get_data_option_schema() -> vol.Schema:
                 ),
                 vol.Coerce(int),
             ),
+            vol.Optional(
+                CONF_EXCLUDE_PATTERNS,
+            ): selector.TextSelector(  # pyright: ignore[reportUnknownMemberType]
+                selector.TextSelectorConfig(
+                    multiple=True,
+                )
+            ),
         }
     )
 
@@ -173,6 +181,11 @@ async def _async_validate_input(
     """
     if user_input[CONF_UPDATE_INTERVAL] < MIN_SELECTED_UPDATE_INTERVAL.seconds:
         return {CONF_UPDATE_INTERVAL: "invalid_update_interval"}
+
+    patterns: list[str] = [p.strip() for p in user_input.get(CONF_EXCLUDE_PATTERNS, [])]
+    user_input[CONF_EXCLUDE_PATTERNS] = patterns
+    if len(patterns) != len(set(patterns)):
+        return {CONF_EXCLUDE_PATTERNS: "duplicate_exclude_pattern"}
 
     return {}
 
@@ -197,6 +210,7 @@ class OptionsFlowHandler(OptionsFlow):
                 self.hass.config_entries.async_update_entry(
                     self.config_entry, data={**self.config_entry.data, **user_input}
                 )
+                await self.hass.config_entries.async_reload(self.config_entry.entry_id)
                 return self.async_create_entry(title="", data={})
             return self.async_show_form(
                 step_id="init",
@@ -211,6 +225,9 @@ class OptionsFlowHandler(OptionsFlow):
 
     def _async_show_init_form(self) -> ConfigFlowResult:
         """Initialise the default update interval if missing and display the options form.
+
+        If the update interval is not yet set in the config entry data, it is initialised
+        with the default value before the form is displayed.
 
         Returns:
             ConfigFlowResult: The form result with pre-filled default values.

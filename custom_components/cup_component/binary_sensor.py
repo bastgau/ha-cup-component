@@ -71,7 +71,7 @@ async def async_setup_entry(
         for description in BINARY_SENSOR_TYPES
     ]
 
-    async_add_entities(entities, update_before_add=True)
+    async_add_entities(entities, update_before_add=False)
 
 
 class CupComponentBinarySensor(CupComponentEntity, BinarySensorEntity):  # pyright: ignore[reportIncompatibleVariableOverride]

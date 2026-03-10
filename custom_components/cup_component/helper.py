@@ -16,6 +16,9 @@ def create_entity_id_name(input_string: str) -> str:
     Returns:
         str: The normalized entity ID (e.g. ``"sensor.my_device_name"``).
 
+    Raises:
+        ValueError: If the input string does not contain a dot separator.
+
     """
 
     if "." not in input_string:
