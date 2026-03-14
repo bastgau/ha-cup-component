@@ -17,8 +17,8 @@ with _MANIFEST_PATH.open(encoding="utf-8") as _f:
 
 # URL path used to serve JS files via a registered static HTTP route.
 URL_BASE: Final[str] = "/cup_component"
-LOVELACE_CARD_JS: Final[str] = "cup-images-card.js"
-LOVELACE_CARD_NAME: Final[str] = "Cup Images Card"
+LOVELACE_CARD_JS: Final[str] = "cup-component-card.js"
+LOVELACE_CARD_NAME: Final[str] = "Cup Component Card"
 LOVELACE_MODULE_URL: Final[str] = f"{URL_BASE}/{LOVELACE_CARD_JS}"
 
 DEFAULT_NAME: Final[str] = "Cup server name"
