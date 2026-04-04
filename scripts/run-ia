@@ -1,0 +1,7 @@
+npm install -g @modelcontextprotocol/server-filesystem
+
+pip install mcp-server-git
+pip install mcp-proxy
+
+mcp-proxy --port 8081 -- mcp-server-filesystem ./custom_components/ &
+mcp-proxy --port 8082 -- mcp-server-git --repository ./

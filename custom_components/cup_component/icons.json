@@ -1,5 +1,10 @@
 {
   "entity": {
+    "binary_sensor": {
+      "updates_available": {
+        "default": "mdi:arrow-down-bold-circle-outline"
+      }
+    },
     "sensor": {
       "major_updates": {
         "default": "mdi:arrow-down-bold-circle-outline"
@@ -8,7 +13,10 @@
         "default": "mdi:arrow-down-bold-circle-outline"
       },
       "monitored_images": {
-        "default": "mdi:eye"
+        "default": "mdi:eye-outline"
+      },
+      "excluded_images": {
+        "default": "mdi:eye-off-outline"
       },
       "other_updates": {
         "default": "mdi:arrow-down-bold-circle-outline"

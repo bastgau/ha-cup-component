@@ -2,26 +2,42 @@
 
 from __future__ import annotations
 
-import json
-from typing import Any, List
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.sensor import (
-    EntityCategory,
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import CONF_NAME
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.helpers.typing import StateType
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.const import CONF_NAME, EntityCategory
 
-from . import CupComponentConfigEntry
-from .api import API as ClientAPI
 from .entity import CupComponentEntity
 from .helper import create_entity_id_name
+
+if TYPE_CHECKING:
+    from datetime import datetime
+
+    from homeassistant.core import HomeAssistant
+    from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+    from homeassistant.helpers.typing import StateType
+    from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+
+    from . import CupComponentConfigEntry, CupComponentData
+    from .api import CupApi
+
+# Keys corresponding to numeric metrics stored in cache_metrics
+_METRIC_SENSOR_KEYS: tuple[str, ...] = (
+    "major_updates",
+    "minor_updates",
+    "monitored_images",
+    "other_updates",
+    "patch_updates",
+    "unknown",
+    "up_to_date",
+    "updates_available",
+    "excluded_images",
+)
 
 SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
     SensorEntityDescription(
@@ -70,86 +86,123 @@ SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
+    SensorEntityDescription(
+        key="excluded_images",
+        translation_key="excluded_images",
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
 )
 
 
 async def async_setup_entry(
-    hass: HomeAssistant,
+    hass: HomeAssistant,  # noqa: ARG001 # pylint: disable=unused-argument
     entry: CupComponentConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Set up the Cup Component sensor."""
+    """Set up Cup Component sensor entities from a config entry.
+
+    Args:
+        hass (HomeAssistant): The Home Assistant instance.
+        entry (CupComponentConfigEntry): The config entry for this integration.
+        async_add_entities (AddConfigEntryEntitiesCallback): Callback to register new entities.
+
+    Returns:
+        None.
+
+    """
     name = entry.data[CONF_NAME]
     cup_data = entry.runtime_data
     sensors = [
         CupComponentSensor(
-            cup_data.api,
-            cup_data.coordinator,
+            cup_data,
             name,
             entry.entry_id,
             description,
         )
         for description in SENSOR_TYPES
     ]
-    async_add_entities(sensors, True)
+    async_add_entities(sensors, update_before_add=False)
 
 
-class CupComponentSensor(CupComponentEntity, SensorEntity):
+class CupComponentSensor(CupComponentEntity, SensorEntity):  # pyright: ignore[reportIncompatibleVariableOverride]
     """Representation of a Cup Component sensor."""
 
     entity_description: SensorEntityDescription
 
     def __init__(
         self,
-        api: ClientAPI,
-        coordinator: DataUpdateCoordinator[None],
+        cup_component: CupComponentData,
         name: str,
         server_unique_id: str,
         description: SensorEntityDescription,
     ) -> None:
-        """Initialize a Cup Component sensor."""
+        """Initialize a Cup Component sensor.
+
+        Args:
+            cup_component (CupComponentData): Runtime data containing the API client and coordinator.
+            name (str): The human-readable name of the Cup server.
+            server_unique_id (str): The unique identifier of the config entry.
+            description (SensorEntityDescription): The entity description for this sensor.
+
+        """
+
+        api: CupApi = cup_component.api
+        coordinator: DataUpdateCoordinator[None] = cup_component.coordinator
+
         super().__init__(api, coordinator, name, server_unique_id)
-        self.entity_description = description
+        self.entity_description = description  # pyright: ignore[reportIncompatibleVariableOverride]
         self._attr_unique_id = f"{self._server_unique_id}/{description.key}"
 
         raw_name: str = f"sensor.{name}_{description.key}"
         self.entity_id = create_entity_id_name(raw_name)
 
     @property
-    def native_value(self) -> StateType:
-        """Return the state of the device."""
+    def native_value(self) -> StateType | datetime | None:  # pyright: ignore[reportIncompatibleVariableOverride]
+        """Return the state of the device.
 
-        possible_keys: List[str] = [
-            "major_updates",
-            "minor_updates",
-            "monitored_images",
-            "other_updates",
-            "patch_updates",
-            "unknown",
-            "up_to_date",
-            "updates_available",
-        ]
+        Returns:
+            StateType | datetime | None: The current value of the sensor.
 
-        entity_description_key: str = self.entity_description.key
+        """
 
-        if self.entity_description.key in possible_keys:
-            return self.api.cache_metrics[entity_description_key]
+        if self.entity_description.key in _METRIC_SENSOR_KEYS:
+            return self.api.cache_metrics.get(self.entity_description.key)
 
         if self.entity_description.key == "last_checked":
             return self.api.cache_last_checked
 
-        return ""
+        return None
 
     @property
-    def extra_state_attributes(self) -> dict[str, Any] | None:
-        """Return the state attributes."""
-        # Set the last start time attribute
-        if isinstance(self.coordinator, DataUpdateCoordinator):
-            if self.entity_description.key in self.api.cache_images:
-                return {
-                    "images_list": json.dumps(
-                        self.api.cache_images[self.entity_description.key]
-                    )
-                }
+    def extra_state_attributes(self) -> dict[str, Any] | None:  # pyright: ignore[reportIncompatibleVariableOverride]
+        """Return the state attributes.
+
+        Returns:
+            dict[str, Any] | None: A dictionary of extra attributes, or None if not applicable.
+
+        """
+        if self.entity_description.key in self.api.cache_images:
+            return {"images_list": self.api.cache_images[self.entity_description.key]}
+
+        if self.entity_description.key == "monitored_images":
+            # Compute the full list of monitored images on the fly (all buckets except excluded)
+            all_images = [
+                image
+                for key, images in self.api.cache_images.items()
+                if key != "excluded_images"
+                for image in images
+            ]
+            return {"images_list": all_images}
+
+        if self.entity_description.key == "updates_available":
+            # Compute the full list of images with pending updates on the fly
+            update_buckets = {"major_updates", "minor_updates", "patch_updates", "other_updates"}
+            all_updates = [
+                image
+                for key, images in self.api.cache_images.items()
+                if key in update_buckets
+                for image in images
+            ]
+            return {"images_list": all_updates}
 
         return None

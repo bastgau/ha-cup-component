@@ -1,6 +1,6 @@
 {
-    "name": "HA Cup Component",
-    "image": "mcr.microsoft.com/devcontainers/python:dev-3.13",
+    "name": "HA Cup Component Integration",
+    "dockerFile": "./Dockerfile",
     "features": {
         "ghcr.io/devcontainers/features/github-cli:1": {
             "installDirectlyFromGitHubRelease": true,
@@ -10,21 +10,18 @@
             "nodeGypDependencies": true,
             "version": "lts"
         },
-        "ghcr.io/devcontainers-contrib/features/poetry:2": {
+        "ghcr.io/devcontainers-extra/features/poetry:2": {
             "version": "latest"
         },
-        "ghcr.io/devcontainers/features/rust:1": {},
-        "ghcr.io/devcontainers-extra/features/apt-packages:1": {
-            "packages": [
-                "ffmpeg",
-                "libturbojpeg0",
-                "libpcap-dev"
-            ]
-        }
+        "ghcr.io/devcontainers/features/rust:1": {}
     },
     "postCreateCommand": "scripts/setup",
+    "mounts": [
+        "type=bind,source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/home/vscode/.ssh,readonly"
+    ],
     "runArgs": [
-        "--network=host"
+        "--network=host",
+        "--env-file=${localWorkspaceFolder}/.devcontainer/.env"
     ],
     "forwardPorts": [
         8123
@@ -44,9 +41,16 @@
                 "charliermarsh.ruff",
                 "ms-python.black-formatter",
                 "tamasfe.even-better-toml",
-                "eamodio.gitlens"
+                "eamodio.gitlens",
+                "mohsen1.prettify-json",
+                "ms-python.pylint"
             ],
             "settings": {
+                "files.insertFinalNewline": true,
+                "files.exclude": {
+                    ".ruff_cache": true,
+                    "**/__pycache__": true
+                },
                 "files.eol": "\n",
                 "editor.tabSize": 4,
                 "python.pythonPath": "/usr/bin/python3",

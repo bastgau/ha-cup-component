@@ -6,7 +6,8 @@
         "error": {
             "incorrect_data_expected": "Failed to retrieve the data in the correct structure.",
             "cannot_connect": "Failed to connect to the server. Ensure that the server address and the port are correct.",
-            "invalid_path": "Invalid API path specified. Please verify the endpoint URL."
+            "invalid_path": "Invalid API path specified. Please verify the endpoint URL.",
+            "unknown_error": "Unknown error. Please check the logs."
         },
         "step": {
             "user": {
@@ -27,17 +28,31 @@
         "step": {
             "init": {
                 "data": {
-                    "update_interval": "Data polling frequency (seconds)"
+                    "update_interval": "Data polling frequency (seconds)",
+                    "exclude_patterns": "Images to exclude"
+                },
+                "data_description": {
+                    "exclude_patterns": "List of image names or regex patterns to exclude from metrics (e.g. nginx:latest, ^myapp.*)"
                 },
                 "description": "After modifying one of these options, it is necessary to reload the service or restart Home Assistant.",
                 "title": "HA Cup Component"
             }
         },
         "error": {
-            "invalid_update_interval": "Invalid data polling frequency. Must be higher than 1 second and lower than 3600 seconds."
+            "invalid_update_interval": "Invalid data polling frequency. Must be higher than 15 second and lower than 3600 seconds.",
+            "duplicate_exclude_pattern": "Duplicate patterns are not allowed.",
+            "incorrect_data_expected": "Failed to retrieve the data in the correct structure.",
+            "cannot_connect": "Failed to connect to the server. Ensure that the server address and the port are correct.",
+            "invalid_path": "Invalid API path specified. Please verify the endpoint URL.",
+            "unknown_error": "Unknown error. Please check the logs."
         }
     },
     "entity": {
+        "binary_sensor": {
+            "updates_available": {
+                "name": "Updates available"
+            }
+        },
         "sensor": {
             "major_updates": {
                 "name": "Images with major updates",
@@ -113,6 +128,15 @@
             },
             "last_checked": {
                 "name": "Last checked"
+            },
+            "excluded_images": {
+                "name": "Excluded images",
+                "unit_of_measurement": "images",
+                "state_attributes": {
+                    "images_list": {
+                        "name": "Image list"
+                    }
+                }
             }
         },
         "button": {

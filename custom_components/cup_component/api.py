@@ -1,60 +1,70 @@
-"""The above class represents Cup API Client with methods for authentication, retrieving summary data, managing blocking status, and logging requests."""
+"""Cup API client for retrieving summary data, managing image refresh, and handling HTTP communication with the Cup server."""
 
 import asyncio
+from datetime import datetime
 import logging
 import re
-from datetime import datetime
-from socket import gaierror as GaiError
+from socket import gaierror
 from typing import Any
 
-import requests
-from aiohttp import ClientError, ContentTypeError
+from aiohttp import ClientError, ClientResponse, ClientSession, ContentTypeError
 
 from .exceptions import (
-    ClientConnectorException,
-    ContentTypeException,
+    ClientConnectorError,
+    ContentApiTypeError,
     handle_status,
 )
 
+# Mapping from API version_update_type values to internal names
+_VERSION_UPDATE_TYPE_MAPPING: dict[str, str] = {
+    "major": "major_updates",
+    "minor": "minor_updates",
+    "other": "other_updates",
+    "patch": "patch_updates",
+    "unknown": "unknown",
+    "up_to_date": "up_to_date",
+}
 
-class API:
+
+class CupApi:
     """Cup API Client."""
 
-    _last_calls: dict[str, datetime] = {}
-
     _logger: logging.Logger | None
-    _session: Any = None
+    _session: ClientSession
     _prefix: str = "/api/v3"
 
-    cache_metrics: dict[str, Any] = {}
-    cache_images: dict[str, Any] = {}
-    cache_last_checked: datetime | None = None
-
-    url: str = ""
-
-    def __init__(  # noqa: D417
+    def __init__(
         self,
-        session,
+        session: ClientSession,
         url: str,
         logger: logging.Logger | None = None,
+        exclude_patterns: list[str] | None = None,
     ) -> None:
         """Initialize Cup API Client object with an API URL and an optional logger.
 
         Args:
-          url (str): Represents the URL of API endpoint.
-          logger (Logger | None): Expects an object of type `Logger` or `None` which will be used to display debug message.
+            session (ClientSession): The aiohttp client session used to perform HTTP requests.
+            url (str): Represents the URL of API endpoint.
+            logger (logging.Logger | None): Expects an object of type `logging.Logger` or `None` which will be used to display debug message.
+            exclude_patterns (list[str] | None): Optional list of exact names or regex patterns to exclude images from metrics.
 
         """
 
-        self.url = url
+        self.url: str = url
         self._logger = logger
         self._session = session
+        # Deduplicate patterns while preserving order
+        self._exclude_patterns: list[str] = list(dict.fromkeys(exclude_patterns or []))
+
+        self.cache_metrics: dict[str, Any] = {}
+        self.cache_images: dict[str, list[Any]] = {}
+        self.cache_last_checked: datetime | None = None
 
     def _get_logger(self) -> logging.Logger:
         """Return a logger if it exists, otherwise it creates a new logger.
 
         Returns:
-          result (Logger): The logger provided during object initialization, otherwise a new logger is created.
+            logging.Logger: The logger provided during object initialization, otherwise a new logger is created.
 
         """
 
@@ -67,20 +77,21 @@ class API:
         self,
         route: str,
         method: str,
-        action: str | None = None,
         data: dict[str, Any] | None = None,
-        timeout: int = 10,
+        req_timeout: int = 10,
+        parse_response: bool = True,
     ) -> dict[str, Any]:
         """Send HTTP requests with specified method, route, and data.
 
         Args:
             route (str): Represents the specific endpoint that you want to call.
-            method (str): Represents the HTTP method to be used. It can be one of the following: "post", "delete", or "get".
-            action (str): Represents the action name requested.
+            method (str): Represents the HTTP method to be used. It can be one of the following: "post", "delete", "get", etc.
             data (dict[str, Any] | None): Used to pass a dictionary containing data to be sent in the request when making a POST request.
+            req_timeout (int): The duration controlling the request timeout.
+            parse_response (bool): Whether to parse the JSON response body. Set to False when no response body is expected.
 
         Returns:
-          result (dict[str, Any]): A dictionary is being returned with keys "code", "reason", and "data".
+            dict[str, Any]: A dictionary is being returned with keys "code", "reason", and "data".
 
         """
 
@@ -91,38 +102,25 @@ class API:
             "content-type": "application/json",
         }
 
-        self._get_logger().debug("Request (%s): %s %s", action, method.upper(), url)
-
-        request: requests.Response
+        self._get_logger().debug("Request (%s): %s %s", route, method.upper(), url)
 
         try:
-            async with asyncio.timeout(timeout):
-                if method.lower() == "post":
-                    request = await self._session.post(url, json=data, headers=headers)
-                elif method.lower() == "put":
-                    request = await self._session.put(url, json=data, headers=headers)
-                elif method.lower() == "delete":
-                    request = await self._session.delete(url, headers=headers)
-                elif method.lower() == "get":
-                    request = await self._session.get(url, headers=headers)
-                else:
-                    raise RuntimeError("Method is not supported/implemented.")
-
-        except (TimeoutError, ClientError, GaiError) as err:
-            raise ClientConnectorException from err
+            request: ClientResponse = await self._dispatch_request(url, method, data, headers, req_timeout)
+        except (TimeoutError, ClientError, gaierror) as err:
+            raise ClientConnectorError from err
 
         result_data: dict[str, Any] = {}
 
         self._get_logger().debug("Status Code: %d", request.status)
         handle_status(request.status)
 
-        if request.status < 400 and request.text != "":
+        if request.status < 400 and request.content_length != 0 and request.content_length is not None:
             try:
-                if request.status != 204 and action != "refresh":
+                if request.status != 204 and parse_response:
                     result_data = await request.json()
 
             except ContentTypeError as err:
-                raise ContentTypeException from err
+                raise ContentApiTypeError from err
 
         return {
             "code": request.status,
@@ -130,19 +128,57 @@ class API:
             "data": result_data,
         }
 
-    async def refresh(self) -> dict[str, Any]:
-        """Refresh image information from Cup Server
+    async def _dispatch_request(
+        self,
+        url: str,
+        method: str,
+        data: dict[str, Any] | None,
+        headers: dict[str, str],
+        req_timeout: int,
+    ) -> ClientResponse:
+        """Dispatch an HTTP request using the appropriate aiohttp method.
+
+        Args:
+            url (str): The full URL to send the request to.
+            method (str): The HTTP method to use (get, post, put, delete).
+            data (dict[str, Any] | None): Optional payload for POST or PUT requests.
+            headers (dict[str, str]): HTTP headers to include in the request.
+            req_timeout (int): Timeout duration in seconds.
 
         Returns:
-          result (dict[str, Any]): A dictionary with the keys "code", "reason", and "data".
+            ClientResponse: The aiohttp response object.
+
+        Raises:
+            RuntimeError: If the HTTP method is not supported.
+
+        """
+
+        method = method.lower()
+
+        async with asyncio.timeout(req_timeout):
+            if method == "post":
+                return await self._session.post(url, json=data, headers=headers)
+            if method == "put":
+                return await self._session.put(url, json=data, headers=headers)
+            if method == "delete":
+                return await self._session.delete(url, headers=headers)
+            if method == "get":
+                return await self._session.get(url, headers=headers)
+
+            msg: str = "Method is not supported/implemented."
+            raise RuntimeError(msg)
+
+    async def refresh(self) -> dict[str, Any]:
+        """Refresh image information from Cup Server.
+
+        Returns:
+            dict[str, Any]: A dictionary with the keys "code", "reason", and "data".
 
         """
 
         url: str = "/refresh"
 
-        result: dict[str, Any] = await self._call(
-            url, action="refresh", method="GET", timeout=120
-        )
+        result: dict[str, Any] = await self._call(url, method="GET", parse_response=False)
 
         return {
             "code": result["code"],
@@ -151,27 +187,39 @@ class API:
         }
 
     async def call_get_all_data(self) -> dict[str, Any]:
-        """Retrieve metrics from Cup Server
+        """Retrieve metrics from Cup Server.
 
         Returns:
-          result (dict[str, Any]): A dictionary with the keys "code", "reason", and "data".
+            dict[str, Any]: A dictionary with the keys "code", "reason", and "data".
+
+        Raises:
+            ContentApiTypeError: If the 'last_updated' field is missing from the API response.
 
         """
 
         url: str = "/json"
 
-        result: dict[str, Any] = await self._call(
-            url,
-            action="get_all_data",
-            method="GET",
-        )
+        result: dict[str, Any] = await self._call(url, method="GET")
 
-        self.cache_last_checked = datetime.fromisoformat(
-            result["data"]["last_updated"].replace("Z", "+00:00")
-        )
+        last_updated = result["data"].get("last_updated")
 
-        self._calculate_images(result["data"])
-        self._calculate_metrics()
+        if last_updated is None:
+            msg: str = "Missing 'last_updated' field in API response."
+            raise ContentApiTypeError(msg)
+
+        self.cache_last_checked = datetime.fromisoformat(last_updated)
+
+        try:
+            self._calculate_images(result["data"])
+        except KeyError:  # ai: ignore
+            if self._logger is not None:
+                self._logger.exception("Incorrect output format for _calculate_images().")
+
+        try:
+            self._calculate_metrics()
+        except KeyError:  # ai: ignore
+            if self._logger is not None:
+                self._logger.exception("Incorrect output format for _calculate_metrics().")
 
         return {
             "code": result["code"],
@@ -179,31 +227,60 @@ class API:
             "data": result["data"],
         }
 
-    def _clean_url(self, url: str):
-        """Removes extra slashes in a URL while ignoring those immediately following "://".
+    def _is_image_excluded(self, image_name: str) -> bool:
+        """Check whether an image name matches any of the configured exclusion patterns.
+
+        Each pattern is first tried as a regex. If the pattern is not a valid
+        regex, it is compared as a plain string.
+
+        Args:
+            image_name (str): The full image name including tag (e.g. ``nginx:latest``).
+
+        Returns:
+            bool: True if the image should be excluded, False otherwise.
+
+        """
+
+        for pattern in self._exclude_patterns:
+            try:
+                if re.fullmatch(pattern, image_name):
+                    return True
+            except re.error:
+                # Invalid regex pattern: log a warning and skip it
+                self._get_logger().warning("Invalid regex pattern '%s', ignoring it.", pattern)
+
+        return False
+
+    def _clean_url(self, url: str) -> str:
+        """Remove extra slashes in a URL while ignoring those immediately following "://".
 
         Args:
             url (str): The URL from which extra slashes need to be removed.
 
         Returns:
             str: The corrected URL with unwanted double slashes replaced by a single slash.
+
         """
 
         pattern = r"(?<!:)/{2,}"
-        corrected_url = re.sub(pattern, "/", url)
-        return corrected_url
+        return re.sub(pattern, "/", url)
 
     def _calculate_images(self, data: dict[str, Any]) -> None:
-        """..."""
+        """Parse image data from the API response and group images by update type.
 
-        mapping: dict[str, str] = {
-            "major": "major_updates",
-            "minor": "minor_updates",
-            "other": "other_updates",
-            "patch": "patch_updates",
-            "unknown": "unknown",
-            "up_to_date": "up_to_date",
-        }
+        Iterates over the list of images returned by the Cup API and categorises each
+        image into one of the following buckets: major_updates, minor_updates,
+        patch_updates, other_updates, unknown, or up_to_date. The result is stored
+        in the instance attribute ``cache_images``.
+
+        Args:
+            data (dict[str, Any]): The raw payload returned by the Cup API, expected
+                to contain an ``images`` key holding a list of image objects.
+
+        Returns:
+            None.
+
+        """
 
         new_images: dict[str, list[Any]] = {
             "major_updates": [],
@@ -212,9 +289,17 @@ class API:
             "patch_updates": [],
             "unknown": [],
             "up_to_date": [],
+            "excluded_images": [],
         }
 
         for image in data["images"]:
+            # Skip images matching any exclusion pattern
+            image_name: str = image.get("reference", "")
+            if self._is_image_excluded(image_name):
+                self._get_logger().debug("Image '%s' excluded from metrics.", image_name)
+                new_images["excluded_images"].append(image)
+                continue
+
             if image["result"]["has_update"] is None:
                 new_images["unknown"].append(image)
                 continue
@@ -225,7 +310,7 @@ class API:
 
             if "version_update_type" in image["result"]["info"]:
                 key: str = image["result"]["info"]["version_update_type"]
-                new_images[mapping[key]].append(image)
+                new_images[_VERSION_UPDATE_TYPE_MAPPING[key]].append(image)  # KeyError thrown later
                 continue
 
             new_images["other_updates"].append(image)
@@ -233,7 +318,22 @@ class API:
         self.cache_images = new_images
 
     def _calculate_metrics(self) -> None:
-        """..."""
+        """Compute summary counters from the categorised image cache.
+
+        Reads ``cache_images`` (populated by ``_calculate_images``) and builds a
+        flat dictionary of integer counters for each update category. Two derived
+        metrics are also computed:
+
+        - ``monitored_images``: total number of images across all categories.
+        - ``updates_available``: number of images that have an update pending,
+          excluding images in the ``up_to_date`` and ``unknown`` categories.
+
+        The result is stored in the instance attribute ``cache_metrics``.
+
+        Returns:
+            None.
+
+        """
 
         new_metrics: dict[str, int] = {
             "major_updates": 0,
@@ -242,17 +342,19 @@ class API:
             "patch_updates": 0,
             "unknown": 0,
             "up_to_date": 0,
+            "excluded_images": 0,
         }
 
         for version_update_type, images in self.cache_images.items():
-            new_metrics[version_update_type] = len(images)
+            if version_update_type == "excluded_images":
+                new_metrics["excluded_images"] = len(images)
+            else:
+                new_metrics[version_update_type] = len(images)
 
-        new_metrics["monitored_images"] = sum(new_metrics.values())
+        new_metrics["monitored_images"] = sum(v for k, v in new_metrics.items() if k != "excluded_images")
 
         new_metrics["updates_available"] = (
-            new_metrics["monitored_images"]
-            - new_metrics["up_to_date"]
-            - new_metrics["unknown"]
+            new_metrics["monitored_images"] - new_metrics["up_to_date"] - new_metrics["unknown"]
         )
 
         self.cache_metrics = new_metrics

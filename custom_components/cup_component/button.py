@@ -2,21 +2,24 @@
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
-from typing import Any
+import logging
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.const import CONF_NAME
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from . import CupComponentConfigEntry
-from .api import API as CupAPI
 from .entity import CupComponentEntity
-from .exceptions import ActionExecutionException
+from .exceptions import ActionExecutionError
 from .helper import create_entity_id_name
+
+if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
+    from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+    from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+
+    from . import CupComponentConfigEntry, CupComponentData
+    from .api import CupApi
 
 PARALLEL_UPDATES = 1
 _LOGGER = logging.getLogger(__name__)
@@ -36,78 +39,97 @@ BUTTON_TYPES: tuple[CupComponentButtonEntityDescription, ...] = (
 
 
 async def async_setup_entry(
-    hass: HomeAssistant,
+    hass: HomeAssistant,  # noqa: ARG001 # pylint: disable=unused-argument
     entry: CupComponentConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
+    """Set up Cup Component button entities from a config entry.
+
+    Args:
+        hass (HomeAssistant): The Home Assistant instance.
+        entry (CupComponentConfigEntry): The config entry for this integration.
+        async_add_entities (AddConfigEntryEntitiesCallback): Callback to register new entities.
+
+    Returns:
+        None.
+
+    """
     name = entry.data[CONF_NAME]
     cup_data = entry.runtime_data
 
-    entities: list[CupComponentButton] = []
-
-    for description in BUTTON_TYPES:
-        entities.append(
-            CupComponentButton(
-                cup_data.api,
-                cup_data.coordinator,
-                name,
-                entry.entry_id,
-                description,
-            )
+    entities: list[CupComponentButton] = [
+        CupComponentButton(
+            cup_data,
+            name,
+            entry.entry_id,
+            description,
         )
+        for description in BUTTON_TYPES
+    ]
 
     async_add_entities(entities)
 
 
-class CupComponentButton(CupComponentEntity, ButtonEntity):
+class CupComponentButton(CupComponentEntity, ButtonEntity):  # pyright: ignore[reportIncompatibleVariableOverride]
     """Representation of a Cup Component button."""
 
     entity_description: CupComponentButtonEntityDescription
 
     def __init__(
         self,
-        api: CupAPI,
-        coordinator: DataUpdateCoordinator,
+        cup_data: CupComponentData,
         name: str,
         server_unique_id: str,
         description: CupComponentButtonEntityDescription,
     ) -> None:
-        """Initialize Cup Component button."""
+        """Initialize Cup Component button.
+
+        Args:
+            cup_data (CupComponentData): Runtime data containing the API client and coordinator.
+            name (str): The human-readable name of the Cup server.
+            server_unique_id (str): The unique identifier of the config entry.
+            description (CupComponentButtonEntityDescription): The entity description for this button.
+
+        """
+
+        api: CupApi = cup_data.api
+        coordinator: DataUpdateCoordinator[None] = cup_data.coordinator
+
         super().__init__(api, coordinator, name, server_unique_id)
-        self.entity_description = description
+        self.entity_description = description  # pyright: ignore[reportIncompatibleVariableOverride]
         self._attr_unique_id = f"{self._server_unique_id}/{description.key}"
 
         raw_name: str = f"button.{name}_{description.key}"
         self.entity_id = create_entity_id_name(raw_name)
 
-        self._is_enabled = True  # Initial state is enabled
-
     async def async_press(self) -> None:
-        """Press the button."""
+        """Press the button.
+
+        Returns:
+            None.
+
+        Raises:
+            ActionExecutionError: If the action is unknown or if the API returns a non-200 status code.
+
+        """
 
         action: str = self.entity_description.key
+        result: dict[str, Any] = {"code": 200, "data": None}
 
         try:
-            result: dict[str, Any] = {"code": 200}
-
             match action:
                 case "action_refresh":
                     result = await self.api.refresh()
                     await self.api.call_get_all_data()
+                case _:
+                    raise ActionExecutionError  # noqa: TRY301
 
             if result["code"] != 200:
-                raise ActionExecutionException()
+                raise ActionExecutionError  # noqa: TRY301
 
-            _LOGGER.info(
-                f"Action '{action}' just executed correctly for '{self._name}'."
-            )
+            _LOGGER.info("Action '%s' just executed correctly for '%s'.", action, self._name)
 
-        except ActionExecutionException:
-            _LOGGER.error(f"Unable to launch '{action}' action : %s", result["data"])
-
-        self.coordinator.async_update_listeners()
-
-    @property
-    def is_enabled(self):
-        """Return whether the button is enabled."""
-        return self._is_enabled
+        except ActionExecutionError:
+            _LOGGER.exception("Unable to launch '%s' action: %s", action, result.get("data", {}))  # ai: ignore
+        else:
+            self.coordinator.async_update_listeners()
