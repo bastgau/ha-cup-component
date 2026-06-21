@@ -41,7 +41,7 @@ async def async_try_connect(hass: HomeAssistant, config: dict[str, Any]) -> dict
 
     """
 
-    session = async_get_clientsession(hass, verify_ssl=False)
+    session = async_get_clientsession(hass)
 
     api_client = CupApi(
         session=session,

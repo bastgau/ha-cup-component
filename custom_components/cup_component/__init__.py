@@ -105,7 +105,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: CupComponentConfigEntry)
 
     _LOGGER.debug("Setting up %s integration with host %s", DOMAIN, url)
 
-    session = async_get_clientsession(hass, verify_ssl=False)
+    session = async_get_clientsession(hass)
     exclude_patterns: list[str] = entry.data.get(CONF_EXCLUDE_PATTERNS, [])
 
     api_client = CupApi(
