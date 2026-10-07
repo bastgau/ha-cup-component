@@ -1,6 +1,7 @@
 ---
-name: Bug report
-about: Create a report to help us improve
+name: 🐞 Bug report
+description: Report an issue
+about: Use this template for tracking a bug.
 title: ""
 labels: ["issue:bug", "issue:triage"]
 assignees: []

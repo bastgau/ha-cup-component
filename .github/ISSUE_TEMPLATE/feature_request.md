@@ -1,6 +1,7 @@
 ---
-name: Feature request
-about: Suggest an idea for this project
+name: 🚀 New feature proposal
+description: Propose a new feature
+about: Use this template to propose a new feature.
 title: ""
 labels: ["issue:enhancement", "issue:triage"]
 assignees: []
