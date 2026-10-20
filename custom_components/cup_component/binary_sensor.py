@@ -7,10 +7,10 @@ import logging
 from typing import TYPE_CHECKING
 
 from homeassistant.components.binary_sensor import (
-    BinarySensorDeviceClass,
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
+from homeassistant.components.binary_sensor.const import BinarySensorDeviceClass
 from homeassistant.const import CONF_NAME
 
 from .entity import CupComponentEntity
@@ -55,7 +55,7 @@ async def async_setup_entry(
         async_add_entities (AddConfigEntryEntitiesCallback): Callback to register new entities.
 
     Returns:
-        None.
+        None
 
     """
     name = entry.data[CONF_NAME]
@@ -75,7 +75,14 @@ async def async_setup_entry(
 
 
 class CupComponentBinarySensor(CupComponentEntity, BinarySensorEntity):  # pyright: ignore[reportIncompatibleVariableOverride]
-    """Representation of a Cup Component binary sensor."""
+    """Representation of a Cup Component binary sensor.
+
+    Attributes:
+        entity_description (CupComponentBinarySensorEntityDescription): Describes this binary sensor.
+        _attr_unique_id (str): The unique id, built from the server id and the description key.
+        entity_id (str): The entity id derived from the server name and the description key.
+
+    """
 
     entity_description: CupComponentBinarySensorEntityDescription
 

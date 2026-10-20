@@ -51,7 +51,7 @@ async def async_setup_entry(
         async_add_entities (AddConfigEntryEntitiesCallback): Callback to register new entities.
 
     Returns:
-        None.
+        None
 
     """
     name = entry.data[CONF_NAME]
@@ -71,7 +71,14 @@ async def async_setup_entry(
 
 
 class CupComponentButton(CupComponentEntity, ButtonEntity):  # pyright: ignore[reportIncompatibleVariableOverride]
-    """Representation of a Cup Component button."""
+    """Representation of a Cup Component button.
+
+    Attributes:
+        entity_description (CupComponentButtonEntityDescription): Describes this button.
+        _attr_unique_id (str): The unique id, built from the server id and the description key.
+        entity_id (str): The entity id derived from the server name and the description key.
+
+    """
 
     entity_description: CupComponentButtonEntityDescription
 
@@ -106,7 +113,7 @@ class CupComponentButton(CupComponentEntity, ButtonEntity):  # pyright: ignore[r
         """Press the button.
 
         Returns:
-            None.
+            None
 
         Raises:
             ActionExecutionError: If the action is unknown or if the API returns a non-200 status code.

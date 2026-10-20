@@ -2,7 +2,12 @@
 
 
 class ActionExecutionError(Exception):
-    """The class `ActionExecutionError` is used to raise an exception when an action cannot be executed."""
+    """The class `ActionExecutionError` is used to raise an exception when an action cannot be executed.
+
+    Attributes:
+        message (str): The error message describing the condition.
+
+    """
 
     message: str = "The action requested has failed. Please check HA logs or Cup logs."
 
@@ -12,7 +17,12 @@ class ActionExecutionError(Exception):
 
 
 class BadGatewayError(Exception):
-    """The class `BadGatewayError` represents an exception for receiving an invalid response from an upstream server."""
+    """The class `BadGatewayError` represents an exception for receiving an invalid response from an upstream server.
+
+    Attributes:
+        message (str): The error message describing the condition.
+
+    """
 
     def __init__(
         self,
@@ -29,7 +39,12 @@ class BadGatewayError(Exception):
 
 
 class BadRequestError(Exception):
-    """The class `BadRequestError` is defined for requests that are unacceptable."""
+    """The class `BadRequestError` is defined for requests that are unacceptable.
+
+    Attributes:
+        message (str): The error message describing the condition.
+
+    """
 
     def __init__(
         self,
@@ -46,7 +61,12 @@ class BadRequestError(Exception):
 
 
 class ClientConnectorError(Exception):
-    """The class `ClientConnectorError` is used to raise an exception when the Cup server is unreachable."""
+    """The class `ClientConnectorError` is used to raise an exception when the Cup server is unreachable.
+
+    Attributes:
+        message (str): The error message describing the condition.
+
+    """
 
     def __init__(
         self,
@@ -63,7 +83,12 @@ class ClientConnectorError(Exception):
 
 
 class ContentApiTypeError(Exception):
-    """The class `ContentApiTypeError` is used to raise an exception when the content type provided by the API is incorrect."""
+    """The class `ContentApiTypeError` is used to raise an exception when the content type provided by the API is incorrect.
+
+    Attributes:
+        message (str): The error message describing the condition.
+
+    """
 
     def __init__(
         self,
@@ -80,7 +105,12 @@ class ContentApiTypeError(Exception):
 
 
 class ForbiddenError(Exception):
-    """The class `ForbiddenError` represents an exception for when an API key lacks the necessary permissions for a request."""
+    """The class `ForbiddenError` represents an exception for when an API key lacks the necessary permissions for a request.
+
+    Attributes:
+        message (str): The error message describing the condition.
+
+    """
 
     def __init__(
         self,
@@ -97,7 +127,12 @@ class ForbiddenError(Exception):
 
 
 class GatewayTimeoutError(Exception):
-    """The class `GatewayTimeoutError` represents an exception that occurs when a server acting as a gateway times out waiting for another server."""
+    """Raised when a server acting as a gateway times out waiting for another server.
+
+    Attributes:
+        message (str): The error message describing the condition.
+
+    """
 
     def __init__(
         self,
@@ -114,7 +149,12 @@ class GatewayTimeoutError(Exception):
 
 
 class MethodNotAllowedError(Exception):
-    """The class `MethodNotAllowedError` represents an exception that occurs when a request's HTTP method is not supported on the server."""
+    """Raised when the HTTP method of a request is not supported by the server.
+
+    Attributes:
+        message (str): The error message describing the condition.
+
+    """
 
     def __init__(
         self,
@@ -131,7 +171,12 @@ class MethodNotAllowedError(Exception):
 
 
 class NotFoundError(Exception):
-    """The class `NotFoundError` represents a situation where a requested resource does not exist."""
+    """The class `NotFoundError` represents a situation where a requested resource does not exist.
+
+    Attributes:
+        message (str): The error message describing the condition.
+
+    """
 
     def __init__(
         self,
@@ -148,7 +193,12 @@ class NotFoundError(Exception):
 
 
 class RequestFailedError(Exception):
-    """The class `RequestFailedError` defines an exception for when a request fails."""
+    """The class `RequestFailedError` defines an exception for when a request fails.
+
+    Attributes:
+        message (str): The error message describing the condition.
+
+    """
 
     def __init__(
         self,
@@ -165,7 +215,12 @@ class RequestFailedError(Exception):
 
 
 class ServerError(Exception):
-    """The class `ServerError` defines an exception for internal server errors."""
+    """The class `ServerError` defines an exception for internal server errors.
+
+    Attributes:
+        message (str): The error message describing the condition.
+
+    """
 
     def __init__(
         self,
@@ -182,7 +237,12 @@ class ServerError(Exception):
 
 
 class ServiceUnavailableError(Exception):
-    """The class `ServiceUnavailableError` defines an exception for when the server is temporarily unavailable."""
+    """The class `ServiceUnavailableError` defines an exception for when the server is temporarily unavailable.
+
+    Attributes:
+        message (str): The error message describing the condition.
+
+    """
 
     def __init__(
         self,
@@ -199,7 +259,12 @@ class ServiceUnavailableError(Exception):
 
 
 class TooManyRequestsError(Exception):
-    """The class `TooManyRequestsError` represents hitting the API with too many requests too quickly."""
+    """The class `TooManyRequestsError` represents hitting the API with too many requests too quickly.
+
+    Attributes:
+        message (str): The error message describing the condition.
+
+    """
 
     def __init__(
         self,
@@ -216,7 +281,12 @@ class TooManyRequestsError(Exception):
 
 
 class UnauthorizedError(Exception):
-    """The class `UnauthorizedError` is used to raise an exception when no session identity is provided for an endpoint requiring authorization."""
+    """Raised when no session identity is provided for an endpoint that requires authorization.
+
+    Attributes:
+        message (str): The error message describing the condition.
+
+    """
 
     def __init__(
         self,
@@ -235,24 +305,17 @@ class UnauthorizedError(Exception):
 def handle_status(status_code: int) -> None:
     """Raise specific exceptions based on the input status code.
 
+    Codes below 400 are ignored. The other codes raise the exception of the matching class: 400 BadRequestError,
+    401 UnauthorizedError, 402 RequestFailedError, 403 ForbiddenError, 404 NotFoundError, 405 MethodNotAllowedError,
+    429 TooManyRequestsError, 500 ServerError, 502 BadGatewayError, 503 ServiceUnavailableError, 504 GatewayTimeoutError.
+
     Args:
         status_code (int): Represents the status code and handles it based on the provided mapping.
 
     Returns:
-        None.
+        None
 
     Raises:
-        BadRequestError: If the status code is 400.
-        UnauthorizedError: If the status code is 401.
-        RequestFailedError: If the status code is 402.
-        ForbiddenError: If the status code is 403.
-        NotFoundError: If the status code is 404.
-        MethodNotAllowedError: If the status code is 405.
-        TooManyRequestsError: If the status code is 429.
-        ServerError: If the status code is 500.
-        BadGatewayError: If the status code is 502.
-        ServiceUnavailableError: If the status code is 503.
-        GatewayTimeoutError: If the status code is 504.
         NotImplementedError: If the status code is not mapped in the exception map.
 
     """

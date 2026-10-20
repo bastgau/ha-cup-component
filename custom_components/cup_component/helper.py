@@ -10,8 +10,7 @@ def create_entity_id_name(input_string: str) -> str:
     slugifies the entity name part using Home Assistant's ``slugify`` helper.
 
     Args:
-        input_string (str): The raw entity ID string to normalise, expected to
-            contain at least one dot separator (e.g. ``"sensor.My Device Name"``).
+        input_string (str): The raw entity ID string to normalise, with at least one dot (e.g. ``"sensor.My Device Name"``).
 
     Returns:
         str: The normalized entity ID (e.g. ``"sensor.my_device_name"``).

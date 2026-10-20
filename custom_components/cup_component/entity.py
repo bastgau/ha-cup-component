@@ -18,7 +18,15 @@ if TYPE_CHECKING:
 
 
 class CupComponentEntity(CoordinatorEntity[DataUpdateCoordinator[None]]):
-    """Representation of a Cup Component entity."""
+    """Representation of a Cup Component entity.
+
+    Attributes:
+        api (CupApi): The Cup API client instance.
+        _attr_has_entity_name (bool): Use the "Device Name Entity Name" display pattern.
+        _name (str): The human-readable name of the Cup server.
+        _server_unique_id (str): The unique identifier of the config entry.
+
+    """
 
     _attr_has_entity_name = True
 

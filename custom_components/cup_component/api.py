@@ -27,7 +27,19 @@ _VERSION_UPDATE_TYPE_MAPPING: dict[str, str] = {
 
 
 class CupApi:
-    """Cup API Client."""
+    """Cup API Client.
+
+    Attributes:
+        url (str): The URL of the Cup server.
+        cache_metrics (dict[str, Any]): Summary counters computed from the last response.
+        cache_images (dict[str, list[Any]]): Images grouped by update type, from the last response.
+        cache_last_checked (datetime | None): When the Cup server last checked for updates.
+        _logger (logging.Logger | None): The logger used for debug messages, if any.
+        _session (ClientSession): The aiohttp client session used to perform HTTP requests.
+        _prefix (str): The API route prefix.
+        _exclude_patterns (list[str]): Image names or regex patterns excluded from the metrics.
+
+    """
 
     _logger: logging.Logger | None
     _session: ClientSession
@@ -92,6 +104,10 @@ class CupApi:
 
         Returns:
             dict[str, Any]: A dictionary is being returned with keys "code", "reason", and "data".
+
+        Raises:
+            ClientConnectorError: If the Cup server cannot be reached (timeout, connection or DNS error).
+            ContentApiTypeError: If the response body is not JSON although parsing was requested.
 
         """
 
@@ -274,11 +290,10 @@ class CupApi:
         in the instance attribute ``cache_images``.
 
         Args:
-            data (dict[str, Any]): The raw payload returned by the Cup API, expected
-                to contain an ``images`` key holding a list of image objects.
+            data (dict[str, Any]): The raw payload returned by the Cup API, with an ``images`` list of image objects.
 
         Returns:
-            None.
+            None
 
         """
 
@@ -325,13 +340,12 @@ class CupApi:
         metrics are also computed:
 
         - ``monitored_images``: total number of images across all categories.
-        - ``updates_available``: number of images that have an update pending,
-          excluding images in the ``up_to_date`` and ``unknown`` categories.
+        - ``updates_available``: number of images with an update pending (not ``up_to_date``, not ``unknown``).
 
         The result is stored in the instance attribute ``cache_metrics``.
 
         Returns:
-            None.
+            None
 
         """
 

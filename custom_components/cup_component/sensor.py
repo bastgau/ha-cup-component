@@ -107,7 +107,7 @@ async def async_setup_entry(
         async_add_entities (AddConfigEntryEntitiesCallback): Callback to register new entities.
 
     Returns:
-        None.
+        None
 
     """
     name = entry.data[CONF_NAME]
@@ -125,7 +125,14 @@ async def async_setup_entry(
 
 
 class CupComponentSensor(CupComponentEntity, SensorEntity):  # pyright: ignore[reportIncompatibleVariableOverride]
-    """Representation of a Cup Component sensor."""
+    """Representation of a Cup Component sensor.
+
+    Attributes:
+        entity_description (SensorEntityDescription): Describes this sensor.
+        _attr_unique_id (str): The unique id, built from the server id and the description key.
+        entity_id (str): The entity id derived from the server name and the description key.
+
+    """
 
     entity_description: SensorEntityDescription
 
