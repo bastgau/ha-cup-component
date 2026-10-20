@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 # This integration is configured exclusively via config entries (no YAML configuration).
-CONFIG_SCHEMA: Final[Any] = cv.config_entry_only_config_schema(DOMAIN)  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+CONFIG_SCHEMA: Final[Any] = cv.config_entry_only_config_schema(DOMAIN)  # pylint: disable=invalid-name  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
 
 PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.BUTTON]
 
@@ -57,7 +57,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:  # pyrig
         """Register frontend resources once HA is running.
 
         Returns:
-            None.
+            None
 
         """
         registrar = JSModuleRegistration(hass)
@@ -76,7 +76,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:  # pyrig
 
 @dataclass
 class CupComponentData:
-    """Holds runtime data for the cup_component integration.
+    """Hold runtime data for the cup_component integration.
 
     Attributes:
         api (CupApi): The API client used to fetch data from the Cup server.
@@ -119,7 +119,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: CupComponentConfigEntry)
         """Fetch data from API endpoint.
 
         Returns:
-            None.
+            None
 
         """
 
@@ -172,7 +172,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:  
         entry (ConfigEntry): The config entry being removed (unused).
 
     Returns:
-        None.
+        None
 
     """
     registrar = JSModuleRegistration(hass)

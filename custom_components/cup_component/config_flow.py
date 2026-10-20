@@ -36,6 +36,10 @@ _LOGGER = logging.getLogger(__name__)
 async def async_try_connect(hass: HomeAssistant, config: dict[str, Any]) -> dict[str, str]:
     """Attempt to connect to the Cup API and return any connection errors.
 
+    Args:
+        hass (HomeAssistant): The Home Assistant instance.
+        config (dict[str, Any]): The connection settings entered by the user.
+
     Returns:
         dict[str, str]: A dictionary mapping field names to error keys, or an empty dict if successful.
 
@@ -70,7 +74,13 @@ async def async_try_connect(hass: HomeAssistant, config: dict[str, Any]) -> dict
 
 
 class CupComponentFlowHandler(ConfigFlow, domain=DOMAIN):
-    """Handle a Cup Component config flow."""
+    """Handle a Cup Component config flow.
+
+    Attributes:
+        VERSION (int): The version of the config entry schema this flow creates.
+        _config (dict[str, Any]): The data collected from the user so far.
+
+    """
 
     VERSION = 1
 
@@ -195,7 +205,7 @@ async def _async_validate_input(
 
 
 class OptionsFlowHandler(OptionsFlow):
-    """Options flow used to change configuration (options) of existing instance of integration."""
+    """Handle the options flow that changes the settings of an existing instance."""
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Handle the initial step of the options flow.
