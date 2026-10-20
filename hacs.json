@@ -3,7 +3,7 @@
   "filename": "cup_component.zip",
   "hide_default_branch": true,
   "country": "FR",
-  "homeassistant": "2025.3",
+  "homeassistant": "2026.10.0",
   "zip_release": true,
   "render_readme": true
 }

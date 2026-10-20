@@ -187,10 +187,7 @@ class CupComponentSensor(CupComponentEntity, SensorEntity):  # pyright: ignore[r
         if self.entity_description.key == "monitored_images":
             # Compute the full list of monitored images on the fly (all buckets except excluded)
             all_images = [
-                image
-                for key, images in self.api.cache_images.items()
-                if key != "excluded_images"
-                for image in images
+                image for key, images in self.api.cache_images.items() if key != "excluded_images" for image in images
             ]
             return {"images_list": all_images}
 
@@ -198,10 +195,7 @@ class CupComponentSensor(CupComponentEntity, SensorEntity):  # pyright: ignore[r
             # Compute the full list of images with pending updates on the fly
             update_buckets = {"major_updates", "minor_updates", "patch_updates", "other_updates"}
             all_updates = [
-                image
-                for key, images in self.api.cache_images.items()
-                if key in update_buckets
-                for image in images
+                image for key, images in self.api.cache_images.items() if key in update_buckets for image in images
             ]
             return {"images_list": all_updates}
 
