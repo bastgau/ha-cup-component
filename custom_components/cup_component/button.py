@@ -50,9 +50,6 @@ async def async_setup_entry(
         entry (CupComponentConfigEntry): The config entry for this integration.
         async_add_entities (AddConfigEntryEntitiesCallback): Callback to register new entities.
 
-    Returns:
-        None
-
     """
     name = entry.data[CONF_NAME]
     cup_data = entry.runtime_data
@@ -111,9 +108,6 @@ class CupComponentButton(CupComponentEntity, ButtonEntity):  # pyright: ignore[r
 
     async def async_press(self) -> None:
         """Press the button.
-
-        Returns:
-            None
 
         Raises:
             ActionExecutionError: If the action is unknown or if the API returns a non-200 status code.

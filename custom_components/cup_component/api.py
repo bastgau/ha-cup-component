@@ -292,9 +292,6 @@ class CupApi:
         Args:
             data (dict[str, Any]): The raw payload returned by the Cup API, with an ``images`` list of image objects.
 
-        Returns:
-            None
-
         """
 
         new_images: dict[str, list[Any]] = {
@@ -343,9 +340,6 @@ class CupApi:
         - ``updates_available``: number of images with an update pending (not ``up_to_date``, not ``unknown``).
 
         The result is stored in the instance attribute ``cache_metrics``.
-
-        Returns:
-            None
 
         """
 
