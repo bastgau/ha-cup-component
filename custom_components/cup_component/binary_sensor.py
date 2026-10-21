@@ -54,9 +54,6 @@ async def async_setup_entry(
         entry (CupComponentConfigEntry): The config entry for this integration.
         async_add_entities (AddConfigEntryEntitiesCallback): Callback to register new entities.
 
-    Returns:
-        None
-
     """
     name = entry.data[CONF_NAME]
     cup_data = entry.runtime_data

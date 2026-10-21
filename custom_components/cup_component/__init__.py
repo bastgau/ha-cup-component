@@ -54,12 +54,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:  # pyrig
     """
 
     async def _register_frontend(_event: Event | None = None) -> None:
-        """Register frontend resources once HA is running.
-
-        Returns:
-            None
-
-        """
+        """Register frontend resources once HA is running."""
         registrar = JSModuleRegistration(hass)
         await registrar.async_register()
 
@@ -116,12 +111,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: CupComponentConfigEntry)
     )
 
     async def async_update_data() -> None:
-        """Fetch data from API endpoint.
-
-        Returns:
-            None
-
-        """
+        """Fetch data from API endpoint."""
 
         await api_client.call_get_all_data()
 
@@ -170,9 +160,6 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:  
     Args:
         hass (HomeAssistant): The Home Assistant instance.
         entry (ConfigEntry): The config entry being removed (unused).
-
-    Returns:
-        None
 
     """
     registrar = JSModuleRegistration(hass)
