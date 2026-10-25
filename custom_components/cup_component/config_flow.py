@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-import voluptuous as vol
+import probatio
 
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.const import CONF_NAME, CONF_URL
@@ -35,6 +35,10 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_try_connect(hass: HomeAssistant, config: dict[str, Any]) -> dict[str, str]:
     """Attempt to connect to the Cup API and return any connection errors.
+
+    Args:
+        hass (HomeAssistant): The Home Assistant instance.
+        config (dict[str, Any]): The connection settings entered by the user.
 
     Returns:
         dict[str, str]: A dictionary mapping field names to error keys, or an empty dict if successful.
@@ -70,7 +74,13 @@ async def async_try_connect(hass: HomeAssistant, config: dict[str, Any]) -> dict
 
 
 class CupComponentFlowHandler(ConfigFlow, domain=DOMAIN):
-    """Handle a Cup Component config flow."""
+    """Handle a Cup Component config flow.
+
+    Attributes:
+        VERSION (int): The version of the config entry schema this flow creates.
+        _config (dict[str, Any]): The data collected from the user so far.
+
+    """
 
     VERSION = 1
 
@@ -105,13 +115,13 @@ class CupComponentFlowHandler(ConfigFlow, domain=DOMAIN):
         raw_user_input: dict[str, Any] = user_input or {}
         return self.async_show_form(
             step_id="user",
-            data_schema=vol.Schema(
+            data_schema=probatio.Schema(
                 {
-                    vol.Required(
+                    probatio.Required(
                         CONF_NAME,
                         default=raw_user_input.get(CONF_NAME, DEFAULT_NAME),
                     ): str,
-                    vol.Required(
+                    probatio.Required(
                         CONF_URL,
                         default=raw_user_input.get(CONF_URL, DEFAULT_URL),
                     ): str,
@@ -135,21 +145,21 @@ class CupComponentFlowHandler(ConfigFlow, domain=DOMAIN):
         return OptionsFlowHandler()
 
 
-def _get_data_option_schema() -> vol.Schema:
-    """Build and return the voluptuous schema for the options flow form.
+def _get_data_option_schema() -> probatio.Schema:
+    """Build and return the probatio schema for the options flow form.
 
     Returns:
-        vol.Schema: The schema used to validate and display the options form.
+        probatio.Schema: The schema used to validate and display the options form.
 
     """
-    return vol.Schema(
+    return probatio.Schema(
         {
-            vol.Required(
+            probatio.Required(
                 CONF_URL,
             ): str,
-            vol.Required(
+            probatio.Required(
                 CONF_UPDATE_INTERVAL,
-            ): vol.All(
+            ): probatio.All(
                 selector.NumberSelector(  # pyright: ignore[reportUnknownMemberType]
                     selector.NumberSelectorConfig(
                         min=MIN_SELECTED_UPDATE_INTERVAL.seconds,
@@ -158,9 +168,9 @@ def _get_data_option_schema() -> vol.Schema:
                         mode=selector.NumberSelectorMode.BOX,
                     )
                 ),
-                vol.Coerce(int),
+                probatio.Coerce(int),
             ),
-            vol.Optional(
+            probatio.Optional(
                 CONF_EXCLUDE_PATTERNS,
             ): selector.TextSelector(  # pyright: ignore[reportUnknownMemberType]
                 selector.TextSelectorConfig(
@@ -195,7 +205,7 @@ async def _async_validate_input(
 
 
 class OptionsFlowHandler(OptionsFlow):
-    """Options flow used to change configuration (options) of existing instance of integration."""
+    """Handle the options flow that changes the settings of an existing instance."""
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Handle the initial step of the options flow.

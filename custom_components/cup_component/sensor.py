@@ -106,9 +106,6 @@ async def async_setup_entry(
         entry (CupComponentConfigEntry): The config entry for this integration.
         async_add_entities (AddConfigEntryEntitiesCallback): Callback to register new entities.
 
-    Returns:
-        None.
-
     """
     name = entry.data[CONF_NAME]
     cup_data = entry.runtime_data
@@ -125,7 +122,14 @@ async def async_setup_entry(
 
 
 class CupComponentSensor(CupComponentEntity, SensorEntity):  # pyright: ignore[reportIncompatibleVariableOverride]
-    """Representation of a Cup Component sensor."""
+    """Representation of a Cup Component sensor.
+
+    Attributes:
+        entity_description (SensorEntityDescription): Describes this sensor.
+        _attr_unique_id (str): The unique id, built from the server id and the description key.
+        entity_id (str): The entity id derived from the server name and the description key.
+
+    """
 
     entity_description: SensorEntityDescription
 
@@ -187,10 +191,7 @@ class CupComponentSensor(CupComponentEntity, SensorEntity):  # pyright: ignore[r
         if self.entity_description.key == "monitored_images":
             # Compute the full list of monitored images on the fly (all buckets except excluded)
             all_images = [
-                image
-                for key, images in self.api.cache_images.items()
-                if key != "excluded_images"
-                for image in images
+                image for key, images in self.api.cache_images.items() if key != "excluded_images" for image in images
             ]
             return {"images_list": all_images}
 
@@ -198,10 +199,7 @@ class CupComponentSensor(CupComponentEntity, SensorEntity):  # pyright: ignore[r
             # Compute the full list of images with pending updates on the fly
             update_buckets = {"major_updates", "minor_updates", "patch_updates", "other_updates"}
             all_updates = [
-                image
-                for key, images in self.api.cache_images.items()
-                if key in update_buckets
-                for image in images
+                image for key, images in self.api.cache_images.items() if key in update_buckets for image in images
             ]
             return {"images_list": all_updates}
 

@@ -1,24 +1,15 @@
 {
   "domain": "cup_component",
   "name": "HA Cup Component",
-  "after_dependencies": [
-    "lovelace"
-  ],
-  "codeowners": [
-    "@bastgau"
-  ],
+  "after_dependencies": ["lovelace"],
+  "codeowners": ["@bastgau"],
   "config_flow": true,
-  "dependencies": [
-    "frontend",
-    "http"
-  ],
+  "dependencies": ["frontend", "http"],
   "documentation": "https://github.com/bastgau/ha-cup-component",
   "integration_type": "service",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/bastgau/ha-cup-component/issues",
-  "loggers": [
-    "cup_component"
-  ],
+  "loggers": ["cup_component"],
   "requirements": [],
   "version": "0.0.0"
 }
