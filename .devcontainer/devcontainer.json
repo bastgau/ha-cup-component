@@ -12,7 +12,7 @@
     },
     "ghcr.io/devcontainers/features/rust:1": {}
   },
-  "postCreateCommand": "scripts/setup",
+  "postCreateCommand": "rm -rf .venv && scripts/setup",
   "mounts": [
     "type=bind,source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/home/vscode/.ssh,readonly",
     "type=volume,source=claude-config-ha-cup-component,target=/home/vscode/.claude",
