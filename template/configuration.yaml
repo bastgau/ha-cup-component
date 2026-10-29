@@ -1,11 +1,6 @@
 # Loads default set of integrations. Do not remove.
 default_config:
 
-logger:
-  default: fatal
-  logs:
-    custom_components.cup_component: debug
-
 # Load frontend themes from the themes folder
 frontend:
   themes: !include_dir_merge_named themes
@@ -13,3 +8,11 @@ frontend:
 automation: !include automations.yaml
 script: !include scripts.yaml
 scene: !include scenes.yaml
+
+# Silences known, harmless devcontainer noise.
+logger:
+  default: warning
+  logs:
+    aiohttp_fast_zlib: error
+    asyncio: error
+    habluetooth.manager: critical
