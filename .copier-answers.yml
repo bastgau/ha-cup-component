@@ -1,10 +1,10 @@
 # Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
-_commit: v0.13.0
+_commit: v0.17.0
 _src_path: gh:bastgau/ha-dev-environment
 author_email: contact@bastiengautier.com
 author_name: Bastien Gautier
 client_package: ''
-copyright_year: 2026
+copyright_year: 2025
 description: The Cup integration for Home Assistant allows you to monitor and retrieve
     update statistics for Docker containers directly from your Home Assistant interface.
 github_owner: bastgau
