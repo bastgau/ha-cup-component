@@ -2,7 +2,7 @@
 
 # Builds the development environment: the Git identity, the uv project
 # environment, the default_config requirements a local `hass` needs, the
-# pre-commit hook, Prettier and a ~/.vimrc. Safe to re-run.
+# git hooks, Prettier and a ~/.vimrc. Safe to re-run.
 
 # shellcheck source=scripts/_common
 source "$(dirname "$0")/_common"
@@ -85,16 +85,18 @@ else
     echo -e "\n${BLUE}[direnv]${NC} ${YELLOW}- Skipped.${NC}"
 fi
 
-echo -e "\n${YELLOW}> Install the pre-commit hook (prek):${NC}\n"
+echo -e "\n${YELLOW}> Install the git hooks (prek):${NC}\n"
 
-# prek, from the lint group, runs .pre-commit-config.yaml. The hook it writes
-# calls this .venv's prek, which `rm -rf .venv && scripts/setup` recreates at
+# prek, from the lint group, runs .pre-commit-config.yaml, whose
+# default_install_hook_types makes it install two hooks: pre-commit (the
+# staged files) and commit-msg (the message, against .commitlintrc.mjs). They
+# call this .venv's prek, which `rm -rf .venv && scripts/setup` recreates at
 # the same path. The hook environments are built on the first commit.
 if ! git rev-parse --git-dir > /dev/null 2>&1; then
     echo -e "Not a git repository. Skipping."
     echo -e "\n${BLUE}[prek]${NC} ${YELLOW}- Skipped.${NC}"
 elif ! run prek install; then
-    echo -e "\n${BLUE}[prek]${NC} ${RED}✗ prek failed to install the pre-commit hook.${NC}\n"
+    echo -e "\n${BLUE}[prek]${NC} ${RED}✗ prek failed to install the git hooks.${NC}\n"
     exit 1
 else
     echo -e "\n${BLUE}[prek]${NC} ${GREEN}✓ Done.${NC}"
