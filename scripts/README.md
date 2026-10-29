@@ -42,7 +42,7 @@ scripts/lint [scope ...]     # default: all
 scripts/test [client|integration|all]
 ```
 
-Each scope has its own 95 % coverage floor and covers what it owns on its own. Without a bundled client there is a single `integration` scope. To iterate on one test, bypass the gate: `uv run --no-sync pytest tests/test_x.py -q`.
+Each scope has its own coverage floor, `COVERAGE_FAIL_UNDER` in `.devcontainer/.common-env` (95 % by default, see `coverage_fail_under` in `.copier-answers.yml`), and covers what it owns on its own. Without a bundled client there is a single `integration` scope. To iterate on one test, bypass the gate: `uv run --no-sync pytest tests/test_x.py -q`.
 
 ## `update_requirements`
 
