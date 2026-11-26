@@ -1,0 +1,20 @@
+# Per-repository additions to the issue forms. Seeded once by the template, then yours:
+# `copier update` never overwrites this file. Each value is a list of GitHub issue form
+# blocks (https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms).
+#
+# bug_report_top:       blocks shown first in the bug report (a compatibility notice, say)
+# bug_report_versions:  blocks shown right after the two version fields (the version of a device, say)
+#
+# Example:
+#   bug_report_top:
+#     - type: markdown
+#       attributes:
+#         value: Not compatible with Home Assistant prior to 2026.11.
+#   bug_report_versions:
+#     - type: input
+#       attributes:
+#         label: Device firmware version
+#       validations:
+#         required: true
+bug_report_top: []
+bug_report_versions: []
