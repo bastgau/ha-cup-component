@@ -6,11 +6,39 @@
 //
 // JavaScript is checked by `scripts/lint js` (node --check, ESLint, Prettier) and by the `javascript` CI job.
 
+// Image references, versions and URLs come from the Cup server and from Docker image labels, which the image's
+// author controls: everything inserted into innerHTML goes through escapeHtml, every link through safeUrl.
+const HTML_ESCAPES = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+};
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    (character) => HTML_ESCAPES[character],
+  );
+}
+
+// An absolute http(s) URL, escaped for an attribute, or null (javascript:, data:, relative or invalid URLs).
+function safeUrl(value) {
+  if (!value) return null;
+  try {
+    const url = new URL(String(value));
+    return url.protocol === "http:" || url.protocol === "https:"
+      ? escapeHtml(url.href)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 const INTEGRATION_DOMAIN = "cup_component",
   CARD_DESCRIPTION =
     "Displays all monitored Docker images grouped by update type.",
-  CARD_LOGO_CDN_URL =
-    "https://brands.home-assistant.io/_/cup_component/icon.png",
   CARD_LOGO_API_URL = "/api/brands/integration/cup_component/icon.png",
   CONFIG = {
     TEXTS: {
@@ -382,12 +410,16 @@ class CupImagesCard extends HTMLElement {
       (this._lastSnapshot = null));
   }
   set hass(e) {
-    if (((this._hass = e), !this._logoResolved))
-      return (
-        (this._logoResolved = !0),
-        void this._resolveLogoUrl().then(() => this._render())
-      );
-    this._logoUrl && this._render();
+    this._hass = e;
+    if (!this._logoResolved) {
+      // The card renders right away; the logo shows up once resolved, or never if it cannot be.
+      this._logoResolved = true;
+      this._resolveLogoUrl().finally(() => {
+        this._lastSnapshot = null;
+        this._render();
+      });
+    }
+    this._render();
   }
   getCardSize() {
     return 3;
@@ -405,15 +437,18 @@ class CupImagesCard extends HTMLElement {
       ...CONFIG.DEFAULTS.preview,
     };
   }
+  // The logo is the integration's own brand/icon.png, served by Home Assistant (2026.3 and later, below the
+  // minimum version this integration supports) behind a brands access token. The brands CDN has no Cup logo.
   async _resolveLogoUrl() {
-    const e = this._hass?.config?.version ?? "",
-      [o, n] = e.split(".").map(Number);
-    if (!(o > 2026 || (2026 === o && n >= 3)))
-      return void (this._logoUrl = CARD_LOGO_CDN_URL);
-    const t = await this._hass.connection.sendMessagePromise({
-      type: "brands/access_token",
-    });
-    t.token && (this._logoUrl = `${CARD_LOGO_API_URL}?token=${t.token}`);
+    try {
+      const t = await this._hass.connection.sendMessagePromise({
+        type: "brands/access_token",
+      });
+      if (t?.token)
+        this._logoUrl = `${CARD_LOGO_API_URL}?token=${encodeURIComponent(t.token)}`;
+    } catch (err) {
+      console.warn("cup-component-card: the logo cannot be loaded.", err);
+    }
   }
   _isCollapsed(e, o) {
     const n = this._config.collapsed ?? CONFIG.DEFAULTS.collapsed;
@@ -423,12 +458,13 @@ class CupImagesCard extends HTMLElement {
     );
   }
   get _deviceVisitUrl() {
-    return (
-      this._hass?.devices?.[this._config?.device_id]?.configuration_url ?? null
+    return safeUrl(
+      this._hass?.devices?.[this._config?.device_id]?.configuration_url,
     );
   }
   _renderLogoHtml() {
-    const e = `<img src="${this._logoUrl}" alt="Logo Cup Component">`;
+    if (!this._logoUrl) return "";
+    const e = `<img src="${escapeHtml(this._logoUrl)}" alt="Logo Cup Component">`;
     return this._deviceVisitUrl
       ? `<a href="${this._deviceVisitUrl}" target="_blank" rel="noopener noreferrer" class="logo-link">${e}</a>`
       : e;
@@ -527,7 +563,7 @@ class CupImagesCard extends HTMLElement {
       a = !this._config.hide_footer,
       s = this._config.hero_style ?? CONFIG.DEFAULTS.hero_style;
     (this.content ||
-      ((this.shadowRoot.innerHTML = `\n        <style>\n          :host { display: block; }\n          .card-header { margin-block-start: 0; margin-block-end: 0; }\n          .card-header .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n\n          /* ── Hero: shared ── */\n          .card-hero {\n            display: flex; flex-direction: row; align-items: center;\n            padding: 0 0 1px 0;\n          }\n\n          /* ── Hero: badges style ── */\n          .logo-link { display: inline-flex; }\n          .card-hero > img, .card-hero > a > img { width: 52px; height: 52px; object-fit: contain; flex-shrink: 0; }\n          .hero-badge-wrapper { flex: 1; display: flex; justify-content: center; align-items: center; gap: var(--ha-space-2); flex-wrap: wrap; }\n          .hero-badge {\n            display: inline-flex; align-items: center; gap: var(--ha-space-1);\n            padding: 2px 6px;\n            font-size: var(--ha-font-size-s); font-weight: 500;\n            color: var(--success-color);\n          }\n          .hero-badge.monitored { color: var(--primary-color); }\n          .hero-badge.has-updates { color: var(--error-color); }\n          .hero-badge ha-icon { --mdc-icon-size: 16px; pointer-events: none; }\n          .hero-badge span { font-weight: 600; }\n\n          /* ── Hero: classic style ── */\n          .hero-counter { display: flex; align-items: center; gap: var(--ha-space-3); margin-left:6px; }\n          .hero-counter > img, .hero-counter > a > img { width: 52px; height: 52px; object-fit: contain; }\n          .hero-stats { display: flex; flex-direction: column; gap: var(--ha-space-1); padding-left: 6px; }\n          .hero-number {\n            display: flex; align-items: baseline; white-space: nowrap;\n            font-size: var(--ha-font-size-4xl); font-weight: 700; line-height: 1;\n            color: var(--success-color);\n          }\n          .hero-label { font-size: var(--ha-font-size-l); font-weight: 400; color: var(--success-color); }\n          .hero-updates {\n            display: flex; align-items: center; gap: var(--ha-space-1);\n            font-size: var(--ha-font-size-s); color: var(--secondary-text-color);\n          }\n          .hero-updates ha-icon { --mdc-icon-size: 14px; }\n          .hero-updates.has-updates { color: var(--error-color); }\n\n          /* ── Sections ── */\n          .sections-divider { border: none; border-top: 1px solid var(--divider-color); margin: 11px 0 var(--ha-space-2) 0; }\n          .group-title {\n            display: flex; align-items: center; gap: var(--ha-space-1);\n            font-size: var(--ha-font-size-s); font-weight: 500;\n            text-transform: uppercase; letter-spacing: 0.05em;\n            color: var(--secondary-text-color);\n            margin-top: 10px; margin-bottom: 0; cursor: pointer; user-select: none;\n          }\n          .group-block:first-child .group-title { margin-top: 0; }\n          .group-title:hover { color: var(--primary-text-color); }\n          .group-title .group-chevron { --mdc-icon-size: 16px; width: 16px; height: 16px; display: flex; transition: transform 0.2s ease; flex-shrink: 0; }\n          .group-block.collapsed .group-chevron { transform: rotate(-90deg); }\n          .group-body { display: flex; flex-direction: column; gap: var(--ha-space-2); margin-top: 10px; }\n          .group-block.collapsed .group-pre-body,\n          .group-block.collapsed .group-body { display: none; }\n          .group-row {\n            border-radius: 8px; overflow: hidden;\n          }\n          .group-header {\n            display: flex; align-items: center; gap: 10px;\n            padding: 10px 12px; min-height: 31px; cursor: pointer; user-select: none;\n            background: color-mix(in srgb, var(--primary-text-color) 5%, transparent);\n            border-radius: 8px; transition: background 0.15s;\n          }\n          .group-header:hover {\n            background: color-mix(in srgb, var(--primary-text-color) 8%, transparent);\n          }\n          .group-row.no-details .group-header { cursor: default; user-select: auto; }\n          .group-row.no-details .group-header:hover { background: color-mix(in srgb, var(--primary-text-color) 5%, transparent); }\n          .group-row.expanded .group-header {\n            border-radius: 8px 8px 0 0;\n            background: color-mix(in srgb, var(--primary-text-color) 7%, transparent);\n          }\n          .row-icon { --mdc-icon-size: 18px; flex-shrink: 0; margin-left: -2px; margin-right: -2px; }\n          .group-name {\n            flex: 1; font-size: var(--ha-font-size-m); font-weight: 500;\n            display: flex; align-items: center; gap: var(--ha-space-1);\n            overflow: hidden;\n          }\n          .group-row-link {\n            display: inline-flex; align-items: center;\n            color: var(--secondary-text-color); background: none;\n            padding: var(--ha-space-1); border-radius: 4px; text-decoration: none;\n          }\n          .group-row-link:hover { color: var(--primary-text-color); background: color-mix(in srgb, var(--primary-text-color) 8%, transparent); }\n          .group-row-link ha-icon { --mdc-icon-size: 16px; }\n          .chevron {\n            --mdc-icon-size: 18px; color: var(--secondary-text-color);\n            transition: transform 0.2s ease; flex-shrink: 0;\n          }\n          .group-row.expanded .chevron { transform: rotate(180deg); }\n          .group-details {\n            display: none;\n            background: color-mix(in srgb, var(--primary-text-color) 7%, transparent);\n            padding: 10px 12px 8px 12px;\n            border-radius: 0 0 8px 8px;\n            border-top: 1px solid var(--divider-color);\n          }\n          .group-row.expanded .group-details { display: block; }\n          .detail-row {\n            display: flex; flex-direction: column; gap: var(--ha-space-1);\n          }\n          .detail-row + .detail-row { margin-top: var(--ha-space-1); }\n          .detail-label {\n            font-size: var(--ha-font-size-xs); color: var(--secondary-text-color);\n            text-transform: uppercase; letter-spacing: 0.05em;\n          }\n          .detail-value {\n            font-size: var(--ha-font-size-s); color: var(--primary-text-color); font-weight: 500;\n            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;\n          }\n          .group-empty {\n            font-size: var(--ha-font-size-m); color: var(--secondary-text-color);\n            font-style: italic; padding: 0;\n          }\n\n          /* ── Footer ── */\n          .card-content:has(.card-footer) { padding-bottom: 0; }\n          .card-footer:empty { padding-top: 5px; padding-bottom: 5px; }\n          .card-footer {\n            display: flex; align-items: center; justify-content: flex-end;\n            padding: 0 0 6px; margin-top: var(--ha-space-1);\n          }\n          .footer-content {\n            display: inline-flex; align-items: center; gap: 6px;\n            font-size: var(--ha-font-size-xs); color: var(--secondary-text-color); font-style: italic;\n          }\n          button.footer-content {\n            padding: 2px 0; border-radius: 999px; border: none; background: none; cursor: pointer;\n          }\n          button.footer-content:hover { color: var(--primary-text-color); background: var(--secondary-background-color); }\n          .footer-content ha-icon { --mdc-icon-size: 12px; }\n        </style>\n        <ha-card>\n          ${r ? `<h1 class="card-header"><div class="name">${this._config.title}</div></h1>` : ""}\n          <div class="card-content">\n            <div id="cup-container"></div>\n            ${a ? `\n            <div class="card-footer">\n              <button class="footer-content" id="refresh-btn">\n                <ha-icon icon="${CONFIG.ICONS.clock}"></ha-icon> ${this._resolveLastChecked()}\n              </button>\n            </div>` : '<div class="card-footer"></div>'}\n          </div>\n        </ha-card>\n      `),
+      ((this.shadowRoot.innerHTML = `\n        <style>\n          :host { display: block; }\n          .card-header { margin-block-start: 0; margin-block-end: 0; }\n          .card-header .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n\n          /* ── Hero: shared ── */\n          .card-hero {\n            display: flex; flex-direction: row; align-items: center;\n            padding: 0 0 1px 0;\n          }\n\n          /* ── Hero: badges style ── */\n          .logo-link { display: inline-flex; }\n          .card-hero > img, .card-hero > a > img { width: 52px; height: 52px; object-fit: contain; flex-shrink: 0; }\n          .hero-badge-wrapper { flex: 1; display: flex; justify-content: center; align-items: center; gap: var(--ha-space-2); flex-wrap: wrap; }\n          .hero-badge {\n            display: inline-flex; align-items: center; gap: var(--ha-space-1);\n            padding: 2px 6px;\n            font-size: var(--ha-font-size-s); font-weight: 500;\n            color: var(--success-color);\n          }\n          .hero-badge.monitored { color: var(--primary-color); }\n          .hero-badge.has-updates { color: var(--error-color); }\n          .hero-badge ha-icon { --mdc-icon-size: 16px; pointer-events: none; }\n          .hero-badge span { font-weight: 600; }\n\n          /* ── Hero: classic style ── */\n          .hero-counter { display: flex; align-items: center; gap: var(--ha-space-3); margin-left:6px; }\n          .hero-counter > img, .hero-counter > a > img { width: 52px; height: 52px; object-fit: contain; }\n          .hero-stats { display: flex; flex-direction: column; gap: var(--ha-space-1); padding-left: 6px; }\n          .hero-number {\n            display: flex; align-items: baseline; white-space: nowrap;\n            font-size: var(--ha-font-size-4xl); font-weight: 700; line-height: 1;\n            color: var(--success-color);\n          }\n          .hero-label { font-size: var(--ha-font-size-l); font-weight: 400; color: var(--success-color); }\n          .hero-updates {\n            display: flex; align-items: center; gap: var(--ha-space-1);\n            font-size: var(--ha-font-size-s); color: var(--secondary-text-color);\n          }\n          .hero-updates ha-icon { --mdc-icon-size: 14px; }\n          .hero-updates.has-updates { color: var(--error-color); }\n\n          /* ── Sections ── */\n          .sections-divider { border: none; border-top: 1px solid var(--divider-color); margin: 11px 0 var(--ha-space-2) 0; }\n          .group-title {\n            display: flex; align-items: center; gap: var(--ha-space-1);\n            font-size: var(--ha-font-size-s); font-weight: 500;\n            text-transform: uppercase; letter-spacing: 0.05em;\n            color: var(--secondary-text-color);\n            margin-top: 10px; margin-bottom: 0; cursor: pointer; user-select: none;\n          }\n          .group-block:first-child .group-title { margin-top: 0; }\n          .group-title:hover { color: var(--primary-text-color); }\n          .group-title .group-chevron { --mdc-icon-size: 16px; width: 16px; height: 16px; display: flex; transition: transform 0.2s ease; flex-shrink: 0; }\n          .group-block.collapsed .group-chevron { transform: rotate(-90deg); }\n          .group-body { display: flex; flex-direction: column; gap: var(--ha-space-2); margin-top: 10px; }\n          .group-block.collapsed .group-pre-body,\n          .group-block.collapsed .group-body { display: none; }\n          .group-row {\n            border-radius: 8px; overflow: hidden;\n          }\n          .group-header {\n            display: flex; align-items: center; gap: 10px;\n            padding: 10px 12px; min-height: 31px; cursor: pointer; user-select: none;\n            background: color-mix(in srgb, var(--primary-text-color) 5%, transparent);\n            border-radius: 8px; transition: background 0.15s;\n          }\n          .group-header:hover {\n            background: color-mix(in srgb, var(--primary-text-color) 8%, transparent);\n          }\n          .group-row.no-details .group-header { cursor: default; user-select: auto; }\n          .group-row.no-details .group-header:hover { background: color-mix(in srgb, var(--primary-text-color) 5%, transparent); }\n          .group-row.expanded .group-header {\n            border-radius: 8px 8px 0 0;\n            background: color-mix(in srgb, var(--primary-text-color) 7%, transparent);\n          }\n          .row-icon { --mdc-icon-size: 18px; flex-shrink: 0; margin-left: -2px; margin-right: -2px; }\n          .group-name {\n            flex: 1; font-size: var(--ha-font-size-m); font-weight: 500;\n            display: flex; align-items: center; gap: var(--ha-space-1);\n            overflow: hidden;\n          }\n          .group-row-link {\n            display: inline-flex; align-items: center;\n            color: var(--secondary-text-color); background: none;\n            padding: var(--ha-space-1); border-radius: 4px; text-decoration: none;\n          }\n          .group-row-link:hover { color: var(--primary-text-color); background: color-mix(in srgb, var(--primary-text-color) 8%, transparent); }\n          .group-row-link ha-icon { --mdc-icon-size: 16px; }\n          .chevron {\n            --mdc-icon-size: 18px; color: var(--secondary-text-color);\n            transition: transform 0.2s ease; flex-shrink: 0;\n          }\n          .group-row.expanded .chevron { transform: rotate(180deg); }\n          .group-details {\n            display: none;\n            background: color-mix(in srgb, var(--primary-text-color) 7%, transparent);\n            padding: 10px 12px 8px 12px;\n            border-radius: 0 0 8px 8px;\n            border-top: 1px solid var(--divider-color);\n          }\n          .group-row.expanded .group-details { display: block; }\n          .detail-row {\n            display: flex; flex-direction: column; gap: var(--ha-space-1);\n          }\n          .detail-row + .detail-row { margin-top: var(--ha-space-1); }\n          .detail-label {\n            font-size: var(--ha-font-size-xs); color: var(--secondary-text-color);\n            text-transform: uppercase; letter-spacing: 0.05em;\n          }\n          .detail-value {\n            font-size: var(--ha-font-size-s); color: var(--primary-text-color); font-weight: 500;\n            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;\n          }\n          .group-empty {\n            font-size: var(--ha-font-size-m); color: var(--secondary-text-color);\n            font-style: italic; padding: 0;\n          }\n\n          /* ── Footer ── */\n          .card-content:has(.card-footer) { padding-bottom: 0; }\n          .card-footer:empty { padding-top: 5px; padding-bottom: 5px; }\n          .card-footer {\n            display: flex; align-items: center; justify-content: flex-end;\n            padding: 0 0 6px; margin-top: var(--ha-space-1);\n          }\n          .footer-content {\n            display: inline-flex; align-items: center; gap: 6px;\n            font-size: var(--ha-font-size-xs); color: var(--secondary-text-color); font-style: italic;\n          }\n          button.footer-content {\n            padding: 2px 0; border-radius: 999px; border: none; background: none; cursor: pointer;\n          }\n          button.footer-content:hover { color: var(--primary-text-color); background: var(--secondary-background-color); }\n          .footer-content ha-icon { --mdc-icon-size: 12px; }\n        </style>\n        <ha-card>\n          ${r ? `<h1 class="card-header"><div class="name">${escapeHtml(this._config.title)}</div></h1>` : ""}\n          <div class="card-content">\n            <div id="cup-container"></div>\n            ${a ? `\n            <div class="card-footer">\n              <button class="footer-content" id="refresh-btn">\n                <ha-icon icon="${CONFIG.ICONS.clock}"></ha-icon> ${this._resolveLastChecked()}\n              </button>\n            </div>` : '<div class="card-footer"></div>'}\n          </div>\n        </ha-card>\n      `),
       (this.content = this.shadowRoot.getElementById("cup-container"))),
       this._updateContent(e, o, i, s));
   }
@@ -591,8 +627,9 @@ class CupImagesCard extends HTMLElement {
           .map((o) => {
             const n = o.reference ?? o.name ?? "",
               { current: t, next: r } = this._getVersionInfo(o),
-              i = !(!t && !r);
-            return `\n        <div class="group-row${this._expandedRows.has(n) ? " expanded" : ""}${i ? "" : " no-details"}" data-key="${n}">\n          <div class="group-header">\n            <ha-icon class="row-icon" icon="${e.icon}" style="color: ${e.color}"></ha-icon>\n            <div class="group-name">\n              <span>${n || CONFIG.TEXTS.imageUnknown}</span>\n              ${o.url ? `<a class="group-row-link" href="${o.url}" target="_blank" rel="noopener noreferrer"><ha-icon icon="${CONFIG.ICONS.open_in_new}"></ha-icon></a>` : ""}\n            </div>\n            ${i ? `<ha-icon class="chevron" icon="${CONFIG.ICONS.chevron_down}"></ha-icon>` : ""}\n          </div>\n          ${i ? `\n          <div class="group-details">\n            <div class="detail-row">\n              <span class="detail-label">${CONFIG.TEXTS.currentVersion}</span>\n              <span class="detail-value">${t ?? "-"}</span>\n            </div>\n            <div class="detail-row">\n              <span class="detail-label">${CONFIG.TEXTS.newVersion}</span>\n              <span class="detail-value">${r ?? "-"}</span>\n            </div>\n          </div>` : ""}\n        </div>`;
+              i = !(!t && !r),
+              u = safeUrl(o.url);
+            return `\n        <div class="group-row${this._expandedRows.has(n) ? " expanded" : ""}${i ? "" : " no-details"}" data-key="${escapeHtml(n)}">\n          <div class="group-header">\n            <ha-icon class="row-icon" icon="${e.icon}" style="color: ${e.color}"></ha-icon>\n            <div class="group-name">\n              <span>${n ? escapeHtml(n) : CONFIG.TEXTS.imageUnknown}</span>\n              ${u ? `<a class="group-row-link" href="${u}" target="_blank" rel="noopener noreferrer"><ha-icon icon="${CONFIG.ICONS.open_in_new}"></ha-icon></a>` : ""}\n            </div>\n            ${i ? `<ha-icon class="chevron" icon="${CONFIG.ICONS.chevron_down}"></ha-icon>` : ""}\n          </div>\n          ${i ? `\n          <div class="group-details">\n            <div class="detail-row">\n              <span class="detail-label">${CONFIG.TEXTS.currentVersion}</span>\n              <span class="detail-value">${t == null ? "-" : escapeHtml(t)}</span>\n            </div>\n            <div class="detail-row">\n              <span class="detail-label">${CONFIG.TEXTS.newVersion}</span>\n              <span class="detail-value">${r == null ? "-" : escapeHtml(r)}</span>\n            </div>\n          </div>` : ""}\n        </div>`;
           })
           .join("");
   }
