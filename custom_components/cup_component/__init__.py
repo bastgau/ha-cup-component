@@ -30,7 +30,7 @@ _LOGGER = logging.getLogger(__name__)
 # This integration is configured exclusively via config entries (no YAML configuration).
 CONFIG_SCHEMA: Final[Any] = cv.config_entry_only_config_schema(DOMAIN)  # pylint: disable=invalid-name  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
 
-PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.BUTTON]
+PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR, Platform.BUTTON, Platform.UPDATE]
 
 type CupComponentConfigEntry = ConfigEntry[CupComponentData]
 
