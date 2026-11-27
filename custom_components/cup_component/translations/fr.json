@@ -13,11 +13,13 @@
       "user": {
         "data": {
           "name": "Nom du serveur",
-          "url": "Adresse"
+          "url": "Adresse",
+          "update_entities": "Créer une entité de mise à jour pour chaque image"
         },
         "data_description": {
           "name": "Le nom du serveur sera utilisé dans les noms d'entités.",
-          "url": "URL ou adresse de votre serveur Cup (par exemple : http://127.0.0.1:8000)."
+          "url": "URL ou adresse de votre serveur Cup (par exemple : http://127.0.0.1:8000).",
+          "update_entities": "Ajoute une entité de mise à jour par image suivie, visible dans Paramètres > Mises à jour. Modifiable ensuite dans les options."
         },
         "description": "Cette intégration vous permet de récupérer les statistiques depuis un serveur Cup.",
         "title": "HA Cup Component"
@@ -29,10 +31,12 @@
       "init": {
         "data": {
           "update_interval": "Fréquence d'interrogation des données (secondes)",
-          "exclude_patterns": "Images à exclure"
+          "exclude_patterns": "Images à exclure",
+          "update_entities": "Créer une entité de mise à jour pour chaque image"
         },
         "data_description": {
-          "exclude_patterns": "Liste de noms d'images ou de regex à exclure des métriques (ex : nginx:latest, ^myapp.*)"
+          "exclude_patterns": "Liste de noms d'images ou de regex à exclure des métriques (ex : nginx:latest, ^myapp.*)",
+          "update_entities": "Ajoute une entité de mise à jour par image suivie, visible dans Paramètres > Mises à jour. Les images exclues n'en ont pas. Les mises à jour ne peuvent pas être installées depuis Home Assistant."
         },
         "description": "Après avoir modifié une de ces options, il est nécessaire de recharger le service ou de redémarrer Home Assistant.",
         "title": "HA Cup Component"

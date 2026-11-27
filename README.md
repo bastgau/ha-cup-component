@@ -25,6 +25,16 @@ The following sensors are currently implemented :
     <img src="https://github.com/bastgau/ha-cup-component/blob/develop/img/release-v1.0.png?raw=true" width="600">
 </p>
 
+### Update entities
+
+The integration can also create one `update` entity per monitored image, so that each pending image update appears in **Settings > Updates**. This is off by default: turn on **Create an update entity for each image** when adding the integration, or later in its options. Turning it off removes these entities.
+
+- Images matching an exclusion pattern get no update entity.
+- An image checked on a Cup agent gets its own entity, named after the image and the agent.
+- The entity shows the current and new version, or the short digests for a digest update.
+- Cup does not provide release notes: the link is the project URL from the image's `org.opencontainers.image.url` label, when it has one.
+- Cup only checks for updates, so they cannot be installed from Home Assistant.
+
 ## Translation
 
 The integration is currently translated in few langages :
