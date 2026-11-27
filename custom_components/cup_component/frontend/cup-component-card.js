@@ -1,3 +1,11 @@
+// The Lovelace card of the HA Cup Component integration: every monitored Docker image, grouped by update type.
+// custom_components/cup_component/card.py serves it and adds it to every dashboard, so it needs no dashboard
+// resource. Add it from the card picker or in YAML:
+//
+//   type: custom:cup-component-card
+//
+// JavaScript is checked by `scripts/lint js` (node --check, ESLint, Prettier) and by the `javascript` CI job.
+
 const INTEGRATION_DOMAIN = "cup_component",
   CARD_DESCRIPTION =
     "Displays all monitored Docker images grouped by update type.",
@@ -327,7 +335,9 @@ class CupImagesCardEditor extends HTMLElement {
     (this._fireConfig(), this._updateValues());
   }
 }
-customElements.define("cup-component-card-editor", CupImagesCardEditor);
+if (!customElements.get("cup-component-card-editor")) {
+  customElements.define("cup-component-card-editor", CupImagesCardEditor);
+}
 class CupImagesCard extends HTMLElement {
   constructor() {
     (super(),
@@ -587,16 +597,23 @@ class CupImagesCard extends HTMLElement {
           .join("");
   }
 }
-(customElements.define("cup-component-card", CupImagesCard),
-  (window.customCards = window.customCards ?? []),
+// Loading the script twice (e.g. a leftover dashboard resource) must not define the elements again.
+if (!customElements.get("cup-component-card")) {
+  customElements.define("cup-component-card", CupImagesCard);
+}
+
+window.customCards = window.customCards || [];
+if (!window.customCards.some((card) => card.type === "cup-component-card")) {
   window.customCards.push({
     type: "cup-component-card",
     name: "Cup Component Card",
     description: CARD_DESCRIPTION,
-    preview: !0,
-  }),
-  console.info(
-    "%c 🐼 CUP-COMPONENT-CARD %c Version 1.89 ",
-    "color: white; background: #2196f3; font-weight: 700;",
-    "color: #2196f3; background: white; font-weight: 700;",
-  ));
+    preview: true,
+  });
+}
+
+console.info(
+  "%c 🐼 CUP-COMPONENT-CARD %c Version 1.89 ",
+  "color: white; background: #2196f3; font-weight: 700;",
+  "color: #2196f3; background: white; font-weight: 700;",
+);
