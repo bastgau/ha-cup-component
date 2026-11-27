@@ -16,7 +16,11 @@ class ActionExecutionError(Exception):
         super().__init__(self.message)
 
 
-class BadGatewayError(Exception):
+class CupApiError(Exception):
+    """Base class of the errors the Cup API client raises: catch it to handle any failed call."""
+
+
+class BadGatewayError(CupApiError):
     """The class `BadGatewayError` represents an exception for receiving an invalid response from an upstream server.
 
     Attributes:
@@ -38,7 +42,7 @@ class BadGatewayError(Exception):
         super().__init__(self.message)
 
 
-class BadRequestError(Exception):
+class BadRequestError(CupApiError):
     """The class `BadRequestError` is defined for requests that are unacceptable.
 
     Attributes:
@@ -60,7 +64,7 @@ class BadRequestError(Exception):
         super().__init__(self.message)
 
 
-class ClientConnectorError(Exception):
+class ClientConnectorError(CupApiError):
     """The class `ClientConnectorError` is used to raise an exception when the Cup server is unreachable.
 
     Attributes:
@@ -82,7 +86,7 @@ class ClientConnectorError(Exception):
         super().__init__(self.message)
 
 
-class ContentApiTypeError(Exception):
+class ContentApiTypeError(CupApiError):
     """The class `ContentApiTypeError` is used to raise an exception when the content type provided by the API is incorrect.
 
     Attributes:
@@ -104,7 +108,7 @@ class ContentApiTypeError(Exception):
         super().__init__(self.message)
 
 
-class ForbiddenError(Exception):
+class ForbiddenError(CupApiError):
     """The class `ForbiddenError` represents an exception for when an API key lacks the necessary permissions for a request.
 
     Attributes:
@@ -126,7 +130,7 @@ class ForbiddenError(Exception):
         super().__init__(self.message)
 
 
-class GatewayTimeoutError(Exception):
+class GatewayTimeoutError(CupApiError):
     """Raised when a server acting as a gateway times out waiting for another server.
 
     Attributes:
@@ -148,7 +152,7 @@ class GatewayTimeoutError(Exception):
         super().__init__(self.message)
 
 
-class MethodNotAllowedError(Exception):
+class MethodNotAllowedError(CupApiError):
     """Raised when the HTTP method of a request is not supported by the server.
 
     Attributes:
@@ -170,7 +174,7 @@ class MethodNotAllowedError(Exception):
         super().__init__(self.message)
 
 
-class NotFoundError(Exception):
+class NotFoundError(CupApiError):
     """The class `NotFoundError` represents a situation where a requested resource does not exist.
 
     Attributes:
@@ -192,7 +196,7 @@ class NotFoundError(Exception):
         super().__init__(self.message)
 
 
-class RequestFailedError(Exception):
+class RequestFailedError(CupApiError):
     """The class `RequestFailedError` defines an exception for when a request fails.
 
     Attributes:
@@ -214,7 +218,7 @@ class RequestFailedError(Exception):
         super().__init__(self.message)
 
 
-class ServerError(Exception):
+class ServerError(CupApiError):
     """The class `ServerError` defines an exception for internal server errors.
 
     Attributes:
@@ -236,7 +240,7 @@ class ServerError(Exception):
         super().__init__(self.message)
 
 
-class ServiceUnavailableError(Exception):
+class ServiceUnavailableError(CupApiError):
     """The class `ServiceUnavailableError` defines an exception for when the server is temporarily unavailable.
 
     Attributes:
@@ -258,7 +262,7 @@ class ServiceUnavailableError(Exception):
         super().__init__(self.message)
 
 
-class TooManyRequestsError(Exception):
+class TooManyRequestsError(CupApiError):
     """The class `TooManyRequestsError` represents hitting the API with too many requests too quickly.
 
     Attributes:
@@ -280,7 +284,7 @@ class TooManyRequestsError(Exception):
         super().__init__(self.message)
 
 
-class UnauthorizedError(Exception):
+class UnauthorizedError(CupApiError):
     """Raised when no session identity is provided for an endpoint that requires authorization.
 
     Attributes:
@@ -313,7 +317,7 @@ def handle_status(status_code: int) -> None:
         status_code (int): Represents the status code and handles it based on the provided mapping.
 
     Raises:
-        NotImplementedError: If the status code is not mapped in the exception map.
+        UnexpectedStatusError: If the status code is not mapped in the exception map.
 
     """
 
@@ -338,4 +342,8 @@ def handle_status(status_code: int) -> None:
         raise exception_map[status_code]()  # noqa: RSE102
 
     msg: str = f"Unexpected error: Status code {status_code}"
-    raise NotImplementedError(msg)
+    raise UnexpectedStatusError(msg)
+
+
+class UnexpectedStatusError(CupApiError):
+    """The class `UnexpectedStatusError` is used to raise an exception when the server answers with an unmapped error status."""
