@@ -26,13 +26,14 @@ _VERSION_UPDATE_TYPE_MAPPING: dict[str, str] = {
 }
 
 
-class CupApi:
+class CupApi:  # pylint: disable=too-many-instance-attributes  # the caches mirror the last response
     """Cup API Client.
 
     Attributes:
         url (str): The URL of the Cup server.
         cache_metrics (dict[str, Any]): Summary counters computed from the last response.
         cache_images (dict[str, list[Any]]): Images grouped by update type, from the last response.
+        cache_monitored_images (dict[str, dict[str, Any]]): Monitored (not excluded) images keyed by ``image_key``.
         cache_last_checked (datetime | None): When the Cup server last checked for updates.
         _logger (logging.Logger | None): The logger used for debug messages, if any.
         _session (ClientSession): The aiohttp client session used to perform HTTP requests.
@@ -70,7 +71,22 @@ class CupApi:
 
         self.cache_metrics: dict[str, Any] = {}
         self.cache_images: dict[str, list[Any]] = {}
+        self.cache_monitored_images: dict[str, dict[str, Any]] = {}
         self.cache_last_checked: datetime | None = None
+
+    @staticmethod
+    def image_key(image: dict[str, Any]) -> str:
+        """Build the stable key identifying an image on a Cup server or one of its agents.
+
+        Args:
+            image (dict[str, Any]): An image object from the Cup API response.
+
+        Returns:
+            str: The key, ``<server>/<reference>``, where the server is ``local`` for the Cup host itself.
+
+        """
+
+        return f"{image.get('server') or 'local'}/{image.get('reference', '')}"
 
     def _get_logger(self) -> logging.Logger:
         """Return a logger if it exists, otherwise it creates a new logger.
@@ -320,14 +336,46 @@ class CupApi:
                 new_images["up_to_date"].append(image)
                 continue
 
-            if "version_update_type" in image["result"]["info"]:
-                key: str = image["result"]["info"]["version_update_type"]
+            # "info" may be null even when an update is reported: treat it as an other update.
+            info: dict[str, Any] = image["result"].get("info") or {}
+
+            if "version_update_type" in info:
+                key: str = info["version_update_type"]
                 new_images[_VERSION_UPDATE_TYPE_MAPPING[key]].append(image)  # KeyError thrown later
                 continue
 
             new_images["other_updates"].append(image)
 
         self.cache_images = new_images
+        self.cache_monitored_images = self._index_monitored_images(new_images)
+
+    def _index_monitored_images(self, images: dict[str, list[Any]]) -> dict[str, dict[str, Any]]:
+        """Index the monitored images (every bucket except the excluded one) by their key.
+
+        Args:
+            images (dict[str, list[Any]]): The images grouped by update type, as built by ``_calculate_images``.
+
+        Returns:
+            dict[str, dict[str, Any]]: The monitored images, keyed by ``image_key``. On a duplicate key the first image wins.
+
+        """
+
+        monitored: dict[str, dict[str, Any]] = {}
+
+        for bucket, bucket_images in images.items():
+            if bucket == "excluded_images":
+                continue
+
+            for image in bucket_images:
+                key: str = self.image_key(image)
+
+                if key in monitored:
+                    self._get_logger().debug("Duplicate image '%s' ignored.", key)
+                    continue
+
+                monitored[key] = image
+
+        return monitored
 
     def _calculate_metrics(self) -> None:
         """Compute summary counters from the categorised image cache.
