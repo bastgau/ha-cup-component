@@ -12,11 +12,13 @@
       "user": {
         "data": {
           "name": "Server name",
-          "url": "Address"
+          "url": "Address",
+          "update_entities": "Create an update entity for each image"
         },
         "data_description": {
           "name": "The name will be used in the entity names",
-          "url": "URL or address of your cup server (ie: http://127.0.0.1:8000)."
+          "url": "URL or address of your cup server (ie: http://127.0.0.1:8000).",
+          "update_entities": "Adds one update entity per monitored image, shown in Settings > Updates. Can be changed later in the options."
         },
         "description": "This integration allows you to retrieve statistics with your Cup server.",
         "title": "HA Cup Component"

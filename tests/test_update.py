@@ -8,7 +8,12 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, patch
 
-from custom_components.cup_component.const import CONF_EXCLUDE_PATTERNS, DOMAIN
+from custom_components.cup_component.const import (
+    CONF_EXCLUDE_PATTERNS,
+    CONF_UPDATE_ENTITIES,
+    CONF_UPDATE_INTERVAL,
+    DOMAIN,
+)
 from custom_components.cup_component.update import build_unique_id, get_image_versions
 import pytest
 from pytest_homeassistant.common import MockConfigEntry, async_fire_time_changed
@@ -57,10 +62,11 @@ def setup_entry_fixture(hass: HomeAssistant, mock_call: AsyncMock) -> Callable[.
     hass.config.components.add("frontend")
 
     async def _setup(**data: Any) -> MockConfigEntry:
+        # The option is on unless a test says otherwise; its default is tested on its own.
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Cup",
-            data={CONF_NAME: "Cup", CONF_URL: "http://cup.local:8000", **data},
+            data={CONF_NAME: "Cup", CONF_URL: "http://cup.local:8000", CONF_UPDATE_ENTITIES: True, **data},
         )
         entry.add_to_hass(hass)
         assert await hass.config_entries.async_setup(entry.entry_id)
@@ -227,3 +233,62 @@ async def test_unavailable_when_server_fails(
 def test_get_image_versions_edge_cases(image: dict[str, Any], expected: tuple[str | None, str | None]) -> None:
     """Missing digests, equal versions and a missing result never produce a wrong state."""
     assert get_image_versions(image) == expected
+
+
+@pytest.mark.usefixtures("setup_entry")  # marks http and frontend loaded
+async def test_no_entity_by_default(hass: HomeAssistant) -> None:
+    """An entry without the option, as every existing entry, creates no update entity."""
+    entry = MockConfigEntry(domain=DOMAIN, title="Cup", data={CONF_NAME: "Cup", CONF_URL: "http://cup.local:8000"})
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert _update_entity_ids(hass, entry) == set()
+    assert hass.states.async_entity_ids("update") == []
+
+
+async def test_options_flow_default_and_toggle(hass: HomeAssistant, setup_entry: Callable[..., Any]) -> None:
+    """The option is off in the options form by default; turning it on then off adds then removes the entities."""
+    entry = await setup_entry(**{CONF_UPDATE_ENTITIES: False})
+    assert _update_entity_ids(hass, entry) == set()
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    schema = result["data_schema"]
+    assert schema is not None
+    assert schema({CONF_URL: "http://cup.local:8000", CONF_UPDATE_INTERVAL: 300})[CONF_UPDATE_ENTITIES] is False
+
+    async def _set_option(*, value: bool) -> None:
+        flow = await hass.config_entries.options.async_init(entry.entry_id)
+        await hass.config_entries.options.async_configure(
+            flow["flow_id"],
+            {CONF_URL: "http://cup.local:8000", CONF_UPDATE_INTERVAL: 300, CONF_UPDATE_ENTITIES: value},
+        )
+        await hass.async_block_till_done()
+
+    await _set_option(value=True)
+    assert entry.data[CONF_UPDATE_ENTITIES] is True
+    assert CUP_ENTITY in _update_entity_ids(hass, entry)
+    assert hass.states.get(CUP_ENTITY).state == STATE_ON  # type: ignore[union-attr]
+
+    await _set_option(value=False)
+    assert _update_entity_ids(hass, entry) == set()
+    assert hass.states.get(CUP_ENTITY) is None
+
+
+@pytest.mark.usefixtures("setup_entry")  # marks http and frontend loaded
+@pytest.mark.parametrize(("user_choice", "expected"), [(None, False), (False, False), (True, True)])
+async def test_user_step_option(hass: HomeAssistant, user_choice: bool | None, expected: bool) -> None:
+    """The setup form offers the option, off by default, and the new entry follows the choice."""
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
+    assert result["data_schema"] is not None
+    assert result["data_schema"]({CONF_NAME: "Cup", CONF_URL: "http://cup.local:8000"})[CONF_UPDATE_ENTITIES] is False
+
+    user_input: dict[str, Any] = {CONF_NAME: "Cup", CONF_URL: "http://cup.local:8000"}
+    if user_choice is not None:
+        user_input[CONF_UPDATE_ENTITIES] = user_choice
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input)
+    await hass.async_block_till_done()
+
+    entry = result["result"]
+    assert entry.data[CONF_UPDATE_ENTITIES] is expected
+    assert bool(_update_entity_ids(hass, entry)) is expected

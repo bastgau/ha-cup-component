@@ -10,7 +10,7 @@ from homeassistant.const import CONF_NAME
 from homeassistant.core import callback
 from homeassistant.helpers import entity_registry as er
 
-from .const import DOMAIN
+from .const import CONF_UPDATE_ENTITIES, DEFAULT_UPDATE_ENTITIES, DOMAIN
 from .entity import CupComponentEntity
 from .helper import create_entity_id_name
 
@@ -122,6 +122,11 @@ async def async_setup_entry(
         async_add_entities (AddConfigEntryEntitiesCallback): Callback to register new entities.
 
     """
+
+    if not entry.data.get(CONF_UPDATE_ENTITIES, DEFAULT_UPDATE_ENTITIES):
+        # The option is off: drop the entities a previous run may have created.
+        async_remove_update_entities(hass, entry)
+        return
 
     name: str = entry.data[CONF_NAME]
     cup_data: CupComponentData = entry.runtime_data
