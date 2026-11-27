@@ -126,12 +126,17 @@ class CupComponentSensor(CupComponentEntity, SensorEntity):  # pyright: ignore[r
 
     Attributes:
         entity_description (SensorEntityDescription): Describes this sensor.
+        _unrecorded_attributes (frozenset[str]): State attributes kept out of the recorder's database.
         _attr_unique_id (str): The unique id, built from the server id and the description key.
         entity_id (str): The entity id derived from the server name and the description key.
 
     """
 
     entity_description: SensorEntityDescription
+
+    # The image lists can be large (every image, with its full update details) and change at every check:
+    # keep them in the live state for the card, out of the recorder's database.
+    _unrecorded_attributes = frozenset({"images_list"})
 
     def __init__(
         self,
