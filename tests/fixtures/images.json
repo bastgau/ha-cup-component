@@ -1,0 +1,127 @@
+{
+  "metrics": {
+    "monitored_images": 6,
+    "up_to_date": 1,
+    "updates_available": 4,
+    "major_updates": 1,
+    "minor_updates": 0,
+    "patch_updates": 0,
+    "other_updates": 3,
+    "unknown": 1
+  },
+  "images": [
+    {
+      "reference": "ghcr.io/sergi0g/cup:v3.5.0",
+      "parts": {
+        "registry": "ghcr.io",
+        "repository": "sergi0g/cup",
+        "tag": "v3.5.0"
+      },
+      "url": "https://github.com/sergi0g/cup",
+      "result": {
+        "has_update": true,
+        "info": {
+          "type": "version",
+          "version_update_type": "major",
+          "new_tag": "v4.0.0",
+          "current_version": "3.5.0",
+          "new_version": "4.0.0"
+        },
+        "error": null
+      },
+      "time": 120,
+      "server": null,
+      "in_use": true
+    },
+    {
+      "reference": "nginx:latest",
+      "parts": {
+        "registry": "registry-1.docker.io",
+        "repository": "library/nginx",
+        "tag": "latest"
+      },
+      "url": null,
+      "result": {
+        "has_update": true,
+        "info": {
+          "type": "digest",
+          "local_digests": [
+            "sha256:aaaaaaaaaaaabbbbbbbbbbbbccccccccccccddddddddddddeeeeeeeeeeeeffff"
+          ],
+          "remote_digest": "sha256:111111111111222222222222333333333333444444444444555555555555666"
+        },
+        "error": null
+      },
+      "time": 80,
+      "server": null,
+      "in_use": true
+    },
+    {
+      "reference": "redis:7",
+      "parts": {
+        "registry": "registry-1.docker.io",
+        "repository": "library/redis",
+        "tag": "7"
+      },
+      "url": null,
+      "result": { "has_update": false, "info": null, "error": null },
+      "time": 60,
+      "server": null,
+      "in_use": true
+    },
+    {
+      "reference": "private/app:1.0",
+      "parts": {
+        "registry": "registry.local",
+        "repository": "private/app",
+        "tag": "1.0"
+      },
+      "url": null,
+      "result": {
+        "has_update": null,
+        "info": null,
+        "error": "401 Unauthorized"
+      },
+      "time": 30,
+      "server": null,
+      "in_use": false
+    },
+    {
+      "reference": "odd/image:2",
+      "parts": {
+        "registry": "registry.local",
+        "repository": "odd/image",
+        "tag": "2"
+      },
+      "url": null,
+      "result": { "has_update": true, "info": null, "error": null },
+      "time": 30,
+      "server": null,
+      "in_use": true
+    },
+    {
+      "reference": "nginx:latest",
+      "parts": {
+        "registry": "registry-1.docker.io",
+        "repository": "library/nginx",
+        "tag": "latest"
+      },
+      "url": null,
+      "result": {
+        "has_update": true,
+        "info": {
+          "type": "digest",
+          "local_digests": [
+            "sha256:999999999999888888888888777777777777666666666666555555555555444"
+          ],
+          "remote_digest": "sha256:111111111111222222222222333333333333444444444444555555555555666"
+        },
+        "error": null
+      },
+      "time": 80,
+      "server": "agent1",
+      "in_use": true
+    }
+  ],
+  "last_updated": "2026-11-27T10:00:00.000000+00:00"
+}

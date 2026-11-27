@@ -16,8 +16,10 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import CupApi
 from .const import (
     CONF_EXCLUDE_PATTERNS,
+    CONF_UPDATE_ENTITIES,
     CONF_UPDATE_INTERVAL,
     DEFAULT_NAME,
+    DEFAULT_UPDATE_ENTITIES,
     DEFAULT_UPDATE_INTERVAL,
     DEFAULT_URL,
     DOMAIN,
@@ -104,6 +106,7 @@ class CupComponentFlowHandler(ConfigFlow, domain=DOMAIN):
             self._config = {
                 CONF_NAME: user_input[CONF_NAME],
                 CONF_URL: user_input[CONF_URL],
+                CONF_UPDATE_ENTITIES: user_input.get(CONF_UPDATE_ENTITIES, DEFAULT_UPDATE_ENTITIES),
             }
 
             await self.async_set_unique_id(user_input[CONF_URL].lower())
@@ -125,6 +128,10 @@ class CupComponentFlowHandler(ConfigFlow, domain=DOMAIN):
                         CONF_URL,
                         default=raw_user_input.get(CONF_URL, DEFAULT_URL),
                     ): str,
+                    probatio.Required(
+                        CONF_UPDATE_ENTITIES,
+                        default=raw_user_input.get(CONF_UPDATE_ENTITIES, DEFAULT_UPDATE_ENTITIES),
+                    ): selector.BooleanSelector(),  # pyright: ignore[reportUnknownMemberType]
                 }
             ),
             errors=errors,
@@ -177,6 +184,10 @@ def _get_data_option_schema() -> probatio.Schema:
                     multiple=True,
                 )
             ),
+            probatio.Required(
+                CONF_UPDATE_ENTITIES,
+                default=DEFAULT_UPDATE_ENTITIES,
+            ): selector.BooleanSelector(),  # pyright: ignore[reportUnknownMemberType]
         }
     )
 
