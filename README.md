@@ -65,6 +65,16 @@ The integration is currently translated in few langages :
 
 [![Add Integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=cup_component)
 
+## Lovelace card
+
+The integration ships its own Lovelace card, which lists every monitored image grouped by update type. It is loaded automatically: there is no dashboard resource to add. Add it from the card picker (**Cup Component Card**), or in YAML:
+
+```yaml
+type: custom:cup-component-card
+```
+
+If you added the card as a dashboard resource with an earlier version (for example `/local/cup-component-card.js`), remove that resource: it is no longer needed.
+
 ## Troubleshooting
 
 If you are having issues connecting, make sure you can successfully connect to http(s)://\<url\>:\<port\>/api/v3/json using a private browser window.
