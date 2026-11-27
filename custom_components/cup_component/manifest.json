@@ -1,10 +1,9 @@
 {
   "domain": "cup_component",
   "name": "HA Cup Component",
-  "after_dependencies": ["lovelace"],
+  "after_dependencies": ["frontend", "http"],
   "codeowners": ["@bastgau"],
   "config_flow": true,
-  "dependencies": ["frontend", "http"],
   "documentation": "https://github.com/bastgau/ha-cup-component",
   "integration_type": "service",
   "iot_class": "local_polling",
