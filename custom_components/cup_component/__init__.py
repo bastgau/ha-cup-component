@@ -15,11 +15,12 @@ from homeassistant.const import (
 )
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import CupApi
 from .card import async_register_card
 from .const import CONF_EXCLUDE_PATTERNS, CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL, DOMAIN
+from .exceptions import CupApiError
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -92,9 +93,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: CupComponentConfigEntry)
     )
 
     async def async_update_data() -> None:
-        """Fetch data from API endpoint."""
+        """Fetch data from API endpoint.
 
-        await api_client.call_get_all_data()
+        Raises:
+            UpdateFailed: If the Cup server cannot be reached or answers with an error.
+
+        """
+
+        try:
+            await api_client.call_get_all_data()
+        except CupApiError as err:
+            # An expected failure: the coordinator logs it once, retries, and marks the entities unavailable.
+            msg: str = f"Unable to fetch data from the Cup server: {err}"
+            raise UpdateFailed(msg) from err
 
     conf_update_interval: int | None = entry.data.get(CONF_UPDATE_INTERVAL)
 
